@@ -1,6 +1,7 @@
 import customtkinter as ctk
 
 from app.config import APP_NAME, WINDOW_WIDTH, WINDOW_HEIGHT, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT
+from app.core.startup import initialize_app_files
 from app.ui.home_screen import HomeScreen
 from app.ui.start_book_screen import StartBookScreen
 from app.ui.edit_books_screen import EditBooksScreen
@@ -59,5 +60,6 @@ class DillyPieApp(ctk.CTk):
 
 
 if __name__ == "__main__":
+    initialize_app_files()
     app = DillyPieApp()
     app.mainloop()
