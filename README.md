@@ -1,6 +1,6 @@
-# DillyPie
+# dillykindle
 
-DillyPie is a small Kindle-style PDF reader app built in Python.
+dillykindle is a small Kindle-style PDF reader app built in Python.
 
 It is designed to run first on a laptop for development, then on a Raspberry Pi as a fullscreen reading device.
 
@@ -21,7 +21,7 @@ It is designed to run first on a laptop for development, then on a Raspberry Pi 
 
 ## Project structure
 
-DillyPie/
+dillykindle/
   app/
     main.py
     config.py
@@ -32,14 +32,14 @@ DillyPie/
   cache/
   logs/
   scripts/
-    dillypie.sh
+    dillykindle.sh
   requirements.txt
   README.md
   .gitignore
 
 ## Important folders
 
-app/ contains the DillyPie source code.
+app/ contains the dillykindle source code.
 
 books/ stores imported PDFs.
 
@@ -49,7 +49,7 @@ cache/ is reserved for future rendered-page caching.
 
 logs/ is reserved for future logs.
 
-scripts/dillypie.sh starts the app.
+scripts/dillykindle.sh starts the app.
 
 ## Development setup
 
@@ -66,7 +66,7 @@ If Tkinter is missing:
 
 ## Run the app
 
-    ./scripts/dillypie.sh
+    ./scripts/dillykindle.sh
 
 Or manually:
 
@@ -86,14 +86,14 @@ After editing code:
 
 On the Raspberry Pi:
 
-    git clone https://github.com/amilpattni/DillyPie.git
-    cd DillyPie
+    git clone https://github.com/amilpattni/dillykindle.git
+    cd dillykindle
     python3 -m venv .venv
     source .venv/bin/activate
     pip install --upgrade pip
     pip install -r requirements.txt
     sudo apt install -y python3-tk
-    ./scripts/dillypie.sh
+    ./scripts/dillykindle.sh
 
 ## Book workflow on Raspberry Pi
 
@@ -101,11 +101,11 @@ To add books:
 
 1. Put PDFs on a USB drive.
 2. Plug the USB into the Raspberry Pi.
-3. Open DillyPie.
+3. Open dillykindle.
 4. Go to edit books.
 5. Choose import book.
 6. Select the PDF from the USB.
-7. DillyPie copies it into its internal books/ folder.
+7. dillykindle copies it into its internal books/ folder.
 
 To remove books:
 
@@ -114,7 +114,7 @@ To remove books:
 3. Choose delete selected book.
 4. Confirm deletion.
 
-DillyPie deletes only the internal imported copy.
+dillykindle deletes only the internal imported copy.
 
 ## Notes
 

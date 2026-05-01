@@ -10,7 +10,7 @@ class HomeScreen(ctk.CTkFrame):
 
         title = ctk.CTkLabel(
             self,
-            text="DillyPie",
+            text="dillykindle",
             text_color="#111111",
             font=title_font(42)
         )

@@ -71,7 +71,7 @@ class EditBooksScreen(ctk.CTkFrame):
 
         note = ctk.CTkLabel(
             self,
-            text="import copies a pdf into dillypie\ndelete removes it from this device",
+            text="import copies a pdf into dillykindle\ndelete removes it from this device",
             text_color=TEXT_MUTED,
             font=body_font(11),
             justify="center"
@@ -180,7 +180,7 @@ class EditBooksScreen(ctk.CTkFrame):
 
         confirmed = messagebox.askyesno(
             "Delete Book",
-            f"Delete '{selected_title}' from this device?\n\nThis will remove the PDF from DillyPie, plus its progress and bookmarks."
+            f"Delete '{selected_title}' from this device?\n\nThis will remove the PDF from dillykindle, plus its progress and bookmarks."
         )
 
         if not confirmed:

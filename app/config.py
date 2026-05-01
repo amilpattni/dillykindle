@@ -10,7 +10,7 @@ LIBRARY_FILE = DATA_DIR / "library.json"
 PROGRESS_FILE = DATA_DIR / "progress.json"
 BOOKMARKS_FILE = DATA_DIR / "bookmarks.json"
 
-APP_NAME = "DillyPie"
+APP_NAME = "dillykindle"
 
 WINDOW_WIDTH = 520
 WINDOW_HEIGHT = 780

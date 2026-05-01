@@ -2,7 +2,7 @@
 
 cd "$(dirname "$0")/.."
 
-echo "Setting up DillyPie..."
+echo "Setting up dillykindle..."
 
 sudo apt update
 sudo apt install -y python3 python3-venv python3-pip python3-tk
@@ -35,5 +35,5 @@ else
     pip install -r requirements.txt
 fi
 
-echo "DillyPie setup complete."
-echo "Run with: ./scripts/dillypie.sh"
+echo "dillykindle setup complete."
+echo "Run with: ./scripts/dillykindle.sh"

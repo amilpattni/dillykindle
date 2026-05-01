@@ -9,7 +9,7 @@ from app.ui.bookmarks_screen import BookmarksScreen
 from app.ui.reader_screen import ReaderScreen
 
 
-class DillyPieApp(ctk.CTk):
+class DillyKindleApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
@@ -61,5 +61,5 @@ class DillyPieApp(ctk.CTk):
 
 if __name__ == "__main__":
     initialize_app_files()
-    app = DillyPieApp()
+    app = DillyKindleApp()
     app.mainloop()
