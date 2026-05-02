@@ -22,13 +22,22 @@ class DillyKindleApp(ctk.CTk):
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
 
-        self.fullscreen = os.environ.get("DILLYKINDLE_FULLSCREEN") == "1"
-        self.attributes("-fullscreen", self.fullscreen)
+        self.fullscreen = False
+        self.start_fullscreen = os.environ.get("DILLYKINDLE_FULLSCREEN") == "1"
         self.current_frame = None
 
         self.bind("<F11>", self.toggle_fullscreen)
 
         self.show_home()
+
+        if self.start_fullscreen:
+            self.after(500, self.enter_fullscreen)
+
+    def enter_fullscreen(self):
+        self.fullscreen = True
+        self.attributes("-fullscreen", True)
+        self.lift()
+        self.focus_force()
 
     def toggle_fullscreen(self, event=None):
         self.fullscreen = not self.fullscreen
