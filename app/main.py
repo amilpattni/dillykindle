@@ -1,3 +1,5 @@
+import os
+
 import customtkinter as ctk
 
 from app.config import APP_NAME, WINDOW_WIDTH, WINDOW_HEIGHT, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT
@@ -20,7 +22,8 @@ class DillyKindleApp(ctk.CTk):
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
 
-        self.fullscreen = False
+        self.fullscreen = os.environ.get("DILLYKINDLE_FULLSCREEN") == "1"
+        self.attributes("-fullscreen", self.fullscreen)
         self.current_frame = None
 
         self.bind("<F11>", self.toggle_fullscreen)
