@@ -130,10 +130,6 @@ class EditBooksScreen(ctk.CTkFrame):
     def get_main_items(self):
         items = [
             {
-                "type": "import_files",
-                "label": "import from files"
-            },
-            {
                 "type": "import_usb",
                 "label": "import from usb"
             }
@@ -388,10 +384,6 @@ class EditBooksScreen(ctk.CTkFrame):
             return
 
         item = items[self.selected_index]
-
-        if item["type"] == "import_files":
-            self.import_from_directory(Path.home())
-            return
 
         if item["type"] == "import_usb":
             self.usb_pdfs = get_usb_pdfs()
