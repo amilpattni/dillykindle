@@ -25,13 +25,42 @@ class DillyKindleApp(ctk.CTk):
         self.fullscreen = False
         self.start_fullscreen = os.environ.get("DILLYKINDLE_FULLSCREEN") == "1"
         self.current_frame = None
+        self.gpio_controller = None
 
         self.bind("<F11>", self.toggle_fullscreen)
+        self.bind_all("<Up>", lambda event: self.handle_hardware_button("up"))
+        self.bind_all("<Down>", lambda event: self.handle_hardware_button("down"))
+        self.bind_all("<Return>", lambda event: self.handle_hardware_button("select"))
+        self.bind_all("<BackSpace>", lambda event: self.handle_hardware_button("back"))
+        self.bind_all("h", lambda event: self.handle_hardware_button("back"))
+        self.bind_all("H", lambda event: self.handle_hardware_button("back"))
 
         self.show_home()
+        self.setup_gpio_buttons()
 
         if self.start_fullscreen:
-            self.after(500, self.enter_fullscreen)
+            self.after(700, self.enter_fullscreen)
+
+    def setup_gpio_buttons(self):
+        if os.environ.get("DILLYKINDLE_GPIO") != "1":
+            return
+
+        try:
+            from app.core.gpio_controller import HardwareButtonController
+            self.gpio_controller = HardwareButtonController(self)
+            print("GPIO buttons enabled.")
+        except Exception as error:
+            print(f"GPIO buttons disabled: {error}")
+
+    def handle_hardware_button(self, action):
+        if self.current_frame is None:
+            return
+
+        method_name = f"handle_{action}"
+        method = getattr(self.current_frame, method_name, None)
+
+        if method is not None:
+            method()
 
     def enter_fullscreen(self):
         self.fullscreen = True

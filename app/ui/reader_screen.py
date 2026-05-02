@@ -252,6 +252,19 @@ class ReaderScreen(ctk.CTkFrame):
         self.unbind_keys()
         self.controller.show_home()
 
+
+    def handle_up(self):
+        self.previous_page()
+
+    def handle_down(self):
+        self.next_page()
+
+    def handle_select(self):
+        self.bookmark_page()
+
+    def handle_back(self):
+        self.go_home()
+
     def destroy(self):
         if self.pdf is not None:
             self.pdf.close()

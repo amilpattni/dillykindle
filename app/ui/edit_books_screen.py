@@ -217,6 +217,36 @@ class EditBooksScreen(ctk.CTkFrame):
         except Exception as error:
             messagebox.showerror("Import Book Failed", str(error))
 
+
+    def move_selection(self, delta):
+        books = get_books()
+
+        if not books:
+            return
+
+        ids = [book["id"] for book in books]
+
+        if self.selected_book_id in ids:
+            index = ids.index(self.selected_book_id)
+        else:
+            index = 0
+
+        index = (index + delta) % len(ids)
+        self.select_book(ids[index])
+
+    def handle_up(self):
+        self.move_selection(-1)
+
+    def handle_down(self):
+        self.move_selection(1)
+
+    def handle_select(self):
+        if self.selected_book_id is None:
+            self.move_selection(0)
+
+    def handle_back(self):
+        self.controller.show_home()
+
     def handle_import_book(self):
         self.import_from_directory(Path.home())
 
