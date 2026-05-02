@@ -31,7 +31,6 @@ class HomeScreen(ctk.CTkFrame):
             ("read", controller.show_start_book),
             ("edit books", controller.show_edit_books),
             ("bookmarks", controller.show_bookmarks),
-            ("exit", controller.destroy),
         ]
 
         for text, command in buttons:
