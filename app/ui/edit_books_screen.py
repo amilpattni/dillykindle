@@ -6,6 +6,41 @@ from app.core.book_manager import add_book, get_books, remove_book
 from app.ui.style import BG, SURFACE, SURFACE_ALT, BORDER, TEXT, TEXT_MUTED, TextButton, title_font, body_font
 
 
+def get_usb_locations():
+    username = Path.home().name
+
+    possible_roots = [
+        Path("/media") / username,
+        Path("/run/media") / username,
+        Path("/mnt"),
+    ]
+
+    locations = []
+
+    for root in possible_roots:
+        if root.exists():
+            for item in root.iterdir():
+                if item.is_dir():
+                    locations.append(item)
+
+    return locations
+
+
+def get_usb_start_directory():
+    usb_locations = get_usb_locations()
+
+    if usb_locations:
+        return usb_locations[0]
+
+    username = Path.home().name
+    media_root = Path("/media") / username
+
+    if media_root.exists():
+        return media_root
+
+    return Path.home()
+
+
 class EditBooksScreen(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, corner_radius=0, fg_color=BG)
@@ -35,31 +70,42 @@ class EditBooksScreen(ctk.CTkFrame):
         top_buttons = ctk.CTkFrame(self, fg_color="transparent")
         top_buttons.pack(pady=8)
 
-        import_button = TextButton(
+        import_file_button = TextButton(
             top_buttons,
-            text="import book",
+            text="import from files",
             command=self.handle_import_book,
-            size=16
+            size=15
         )
-        import_button.pack(side="left", padx=16)
+        import_file_button.pack(side="left", padx=12)
+
+        import_usb_button = TextButton(
+            top_buttons,
+            text="import from usb",
+            command=self.handle_import_from_usb,
+            size=15
+        )
+        import_usb_button.pack(side="left", padx=12)
+
+        delete_row = ctk.CTkFrame(self, fg_color="transparent")
+        delete_row.pack(pady=(10, 0))
 
         delete_button = TextButton(
-            top_buttons,
+            delete_row,
             text="delete selected book",
             command=self.handle_delete_book,
-            size=16,
+            size=15,
             danger=True
         )
-        delete_button.pack(side="left", padx=16)
+        delete_button.pack()
 
         self.list_frame = ctk.CTkScrollableFrame(
             self,
             width=420,
-            height=420,
+            height=390,
             fg_color=BG,
             border_width=0
         )
-        self.list_frame.pack(pady=24, fill="both", expand=True, padx=28)
+        self.list_frame.pack(pady=20, fill="both", expand=True, padx=28)
 
         self.selection_label = ctk.CTkLabel(
             self,
@@ -154,10 +200,10 @@ class EditBooksScreen(ctk.CTkFrame):
         else:
             self.selection_label.configure(text="no book selected")
 
-    def handle_import_book(self):
+    def import_from_directory(self, start_directory):
         file_path = filedialog.askopenfilename(
             title="Import a PDF book",
-            initialdir=str(Path.home()),
+            initialdir=str(start_directory),
             filetypes=[("PDF Books", "*.pdf")]
         )
 
@@ -170,6 +216,20 @@ class EditBooksScreen(ctk.CTkFrame):
             self.refresh_books()
         except Exception as error:
             messagebox.showerror("Import Book Failed", str(error))
+
+    def handle_import_book(self):
+        self.import_from_directory(Path.home())
+
+    def handle_import_from_usb(self):
+        usb_locations = get_usb_locations()
+
+        if not usb_locations:
+            messagebox.showinfo(
+                "No USB Found",
+                "No USB drive was found.\n\nOn Raspberry Pi, USB drives usually appear under /media/amil/ after they are mounted."
+            )
+
+        self.import_from_directory(get_usb_start_directory())
 
     def handle_delete_book(self):
         if self.selected_book_id is None:
