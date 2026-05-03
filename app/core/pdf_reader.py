@@ -29,7 +29,7 @@ class PDFReader:
         height_scale = target_height / rect.height
         scale = min(width_scale, height_scale)
 
-        render_scale = max(scale * 2.5, 1.5)
+        render_scale = max(scale * 1.25, 1.0)
 
         matrix = fitz.Matrix(render_scale, render_scale)
         pixmap = page.get_pixmap(matrix=matrix, alpha=False)
