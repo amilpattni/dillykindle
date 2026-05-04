@@ -33,6 +33,9 @@ class EPaperApp:
         self.current_page = 0
         self.reader_message = ""
 
+        self.read_focus = "list"
+        self.bookmark_focus = "list"
+
         self.partial_count_since_full = 0
 
         self.font_cache = {}
@@ -275,8 +278,9 @@ class EPaperApp:
         draw = ImageDraw.Draw(image)
 
         title_font = self.load_font(30)
-        item_font = self.load_font(18)
-        small_font = self.load_font(13)
+        item_font = self.load_font(17)
+        small_font = self.load_font(12)
+        action_font = self.load_font(14)
 
         draw.text((42, 54), "read", font=title_font, fill=0)
 
@@ -287,18 +291,18 @@ class EPaperApp:
             draw.text((42, 220), "press q to go home", font=item_font, fill=0)
             return image
 
-        max_visible = 8
+        max_visible = 7
         start = max(0, self.list_index - max_visible // 2)
         end = min(len(books), start + max_visible)
 
         if end - start < max_visible:
             start = max(0, end - max_visible)
 
-        y = 140
+        y = 118
 
         for i in range(start, end):
             book = books[i]
-            selected = i == self.list_index
+            selected = i == self.list_index and self.read_focus == "list"
 
             title = self.clip_text(book["title"], 28)
             line = f"> {title}" if selected else title
@@ -313,11 +317,30 @@ class EPaperApp:
             else:
                 subline = f"last read: {saved_page} | recent mark: {recent['page'] + 1}"
 
-            draw.text((62, y + 24), subline, font=small_font, fill=0)
+            draw.text((62, y + 23), subline, font=small_font, fill=0)
 
-            y += 72
+            y += 68
 
-        draw.text((42, 740), "select = book options", font=small_font, fill=0)
+        book = books[self.list_index]
+        continue_page = progress_manager.get_page(book["id"]) + 1
+
+        continue_label = f"continue book pg({continue_page})"
+        start_label = "start book"
+
+        if self.read_focus == "actions" and self.action_index == 0:
+            continue_label = f"> {continue_label} <"
+
+        if self.read_focus == "actions" and self.action_index == 1:
+            start_label = f"> {start_label} <"
+
+        draw.line((28, 688, 452, 688), fill=0, width=1)
+        draw.text((40, 708), continue_label, font=action_font, fill=0)
+        draw.text((40, 736), start_label, font=action_font, fill=0)
+
+        if self.read_focus == "list":
+            draw.text((300, 736), "select book", font=small_font, fill=0)
+        else:
+            draw.text((300, 736), "select action", font=small_font, fill=0)
 
         return image
 
@@ -393,8 +416,9 @@ class EPaperApp:
         draw = ImageDraw.Draw(image)
 
         title_font = self.load_font(30)
-        item_font = self.load_font(17)
-        small_font = self.load_font(13)
+        item_font = self.load_font(16)
+        small_font = self.load_font(12)
+        action_font = self.load_font(14)
 
         draw.text((42, 54), "bookmarks", font=title_font, fill=0)
 
@@ -405,28 +429,44 @@ class EPaperApp:
             draw.text((42, 220), "open a book and press select", font=item_font, fill=0)
             return image
 
-        max_visible = 8
+        max_visible = 7
         start = max(0, self.list_index - max_visible // 2)
         end = min(len(bookmarks), start + max_visible)
 
         if end - start < max_visible:
             start = max(0, end - max_visible)
 
-        y = 132
+        y = 118
 
         for i in range(start, end):
             bookmark = bookmarks[i]
-            selected = i == self.list_index
+            selected = i == self.list_index and self.bookmark_focus == "list"
 
-            title = self.clip_text(bookmark["book_title"], 22)
+            title = self.clip_text(bookmark["book_title"], 24)
             line = f"> {title}" if selected else title
 
             draw.text((42, y), line, font=item_font, fill=0)
-            draw.text((62, y + 24), f"page {bookmark['page'] + 1}", font=small_font, fill=0)
+            draw.text((62, y + 23), f"page {bookmark['page'] + 1}", font=small_font, fill=0)
 
-            y += 72
+            y += 68
 
-        draw.text((42, 740), "select = bookmark options", font=small_font, fill=0)
+        open_label = "open bookmark"
+        delete_label = "delete bookmark"
+
+        if self.bookmark_focus == "actions" and self.action_index == 0:
+            open_label = f"> {open_label} <"
+
+        if self.bookmark_focus == "actions" and self.action_index == 1:
+            delete_label = f"> {delete_label} <"
+
+        draw.line((28, 688, 452, 688), fill=0, width=1)
+        draw.text((40, 708), open_label, font=action_font, fill=0)
+        draw.text((40, 736), delete_label, font=action_font, fill=0)
+
+        if self.bookmark_focus == "list":
+            draw.text((300, 736), "select mark", font=small_font, fill=0)
+        else:
+            draw.text((300, 736), "select action", font=small_font, fill=0)
 
         return image
 
@@ -549,28 +589,27 @@ class EPaperApp:
 
         if self.screen == "read":
             books = get_books()
-            if books:
-                self.list_index = (self.list_index - 1) % len(books)
-                self.show_current("partial")
-            return
+            if not books:
+                return
 
-        if self.screen == "read_actions":
-            actions = self.get_read_actions()
-            if actions:
-                self.action_index = (self.action_index - 1) % len(actions)
-                self.show_current("partial")
+            if self.read_focus == "list":
+                self.list_index = (self.list_index - 1) % len(books)
+            else:
+                self.action_index = (self.action_index - 1) % 2
+
+            self.show_current("partial")
             return
 
         if self.screen == "bookmarks":
             bookmarks = self.get_bookmarks()
-            if bookmarks:
-                self.list_index = (self.list_index - 1) % len(bookmarks)
-                self.show_current("partial")
-            return
+            if not bookmarks:
+                return
 
-        if self.screen == "bookmark_actions":
-            actions = self.get_bookmark_actions()
-            self.action_index = (self.action_index - 1) % len(actions)
+            if self.bookmark_focus == "list":
+                self.list_index = (self.list_index - 1) % len(bookmarks)
+            else:
+                self.action_index = (self.action_index - 1) % 2
+
             self.show_current("partial")
             return
 
@@ -590,28 +629,27 @@ class EPaperApp:
 
         if self.screen == "read":
             books = get_books()
-            if books:
-                self.list_index = (self.list_index + 1) % len(books)
-                self.show_current("partial")
-            return
+            if not books:
+                return
 
-        if self.screen == "read_actions":
-            actions = self.get_read_actions()
-            if actions:
-                self.action_index = (self.action_index + 1) % len(actions)
-                self.show_current("partial")
+            if self.read_focus == "list":
+                self.list_index = (self.list_index + 1) % len(books)
+            else:
+                self.action_index = (self.action_index + 1) % 2
+
+            self.show_current("partial")
             return
 
         if self.screen == "bookmarks":
             bookmarks = self.get_bookmarks()
-            if bookmarks:
-                self.list_index = (self.list_index + 1) % len(bookmarks)
-                self.show_current("partial")
-            return
+            if not bookmarks:
+                return
 
-        if self.screen == "bookmark_actions":
-            actions = self.get_bookmark_actions()
-            self.action_index = (self.action_index + 1) % len(actions)
+            if self.bookmark_focus == "list":
+                self.list_index = (self.list_index + 1) % len(bookmarks)
+            else:
+                self.action_index = (self.action_index + 1) % 2
+
             self.show_current("partial")
             return
 
@@ -632,70 +670,69 @@ class EPaperApp:
                 self.screen = "read"
                 self.list_index = 0
                 self.action_index = 0
-                self.show_current("full")
+                self.read_focus = "list"
+                self.show_current("partial")
                 return
 
             if choice == "bookmarks":
                 self.screen = "bookmarks"
                 self.list_index = 0
                 self.action_index = 0
-                self.show_current("full")
+                self.bookmark_focus = "list"
+                self.show_current("partial")
                 return
 
             if choice == "edit books":
                 self.screen = "edit books"
-                self.show_current("full")
+                self.show_current("partial")
                 return
 
         if self.screen == "read":
             books = get_books()
-            if books:
-                self.screen = "read_actions"
+            if not books:
+                return
+
+            if self.read_focus == "list":
+                self.read_focus = "actions"
                 self.action_index = 0
                 self.show_current("partial")
-            return
+                return
 
-        if self.screen == "read_actions":
-            books = get_books()
-            actions = self.get_read_actions()
+            book = books[self.list_index]
 
-            if books and actions:
-                book = books[self.list_index]
-                page = actions[self.action_index]["page"]
-                self.enter_reader(book["id"], page)
+            if self.action_index == 0:
+                page = progress_manager.get_page(book["id"])
+            else:
+                page = 0
+
+            self.enter_reader(book["id"], page)
             return
 
         if self.screen == "bookmarks":
             bookmarks = self.get_bookmarks()
-            if bookmarks:
-                self.screen = "bookmark_actions"
+            if not bookmarks:
+                return
+
+            if self.bookmark_focus == "list":
+                self.bookmark_focus = "actions"
                 self.action_index = 0
                 self.show_current("partial")
-            return
-
-        if self.screen == "bookmark_actions":
-            bookmarks = self.get_bookmarks()
-
-            if not bookmarks:
-                self.screen = "bookmarks"
-                self.show_current("full")
                 return
 
             bookmark = bookmarks[self.list_index]
-            action = self.get_bookmark_actions()[self.action_index]
 
-            if action["type"] == "open":
+            if self.action_index == 0:
                 self.enter_reader(bookmark["book_id"], bookmark["page"])
                 return
 
-            if action["type"] == "delete":
+            if self.action_index == 1:
                 self.remove_bookmark(bookmark["id"])
-                self.screen = "bookmarks"
+                self.bookmark_focus = "list"
                 self.action_index = 0
 
-                new_bookmarks = self.get_bookmarks()
-                if self.list_index >= len(new_bookmarks):
-                    self.list_index = max(0, len(new_bookmarks) - 1)
+                updated = self.get_bookmarks()
+                if self.list_index >= len(updated):
+                    self.list_index = max(0, len(updated) - 1)
 
                 self.show_current("full")
                 return
@@ -710,26 +747,37 @@ class EPaperApp:
         if self.screen == "home":
             return
 
-        if self.screen == "read_actions":
-            self.screen = "read"
-            self.action_index = 0
+        if self.screen == "read":
+            if self.read_focus == "actions":
+                self.read_focus = "list"
+                self.action_index = 0
+                self.show_current("partial")
+                return
+
+            self.screen = "home"
             self.show_current("partial")
             return
 
-        if self.screen == "bookmark_actions":
-            self.screen = "bookmarks"
-            self.action_index = 0
+        if self.screen == "bookmarks":
+            if self.bookmark_focus == "actions":
+                self.bookmark_focus = "list"
+                self.action_index = 0
+                self.show_current("partial")
+                return
+
+            self.screen = "home"
             self.show_current("partial")
             return
 
         if self.screen == "reader":
             self.reader_message = ""
             self.screen = "read"
+            self.read_focus = "list"
             self.show_current("full")
             return
 
         self.screen = "home"
-        self.show_current("full")
+        self.show_current("partial")
 
     def run(self):
         self.show_current("startup")
