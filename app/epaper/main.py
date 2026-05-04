@@ -24,8 +24,10 @@ class EPaperApp:
         self.display = EPaperDisplay()
 
         self.screen = "home"
+
         self.home_index = 0
         self.list_index = 0
+        self.action_index = 0
 
         self.current_book_id = None
         self.current_page = 0
@@ -102,17 +104,34 @@ class EPaperApp:
             except Exception:
                 pass
 
+    def remove_bookmark(self, bookmark_id):
+        func = getattr(bookmark_manager, "remove_bookmark", None)
+
+        if func is not None:
+            func(bookmark_id)
+
     def get_bookmarks(self):
         if not hasattr(bookmark_manager, "get_bookmarks"):
             return []
 
         bookmarks = []
+
         for bookmark in reversed(bookmark_manager.get_bookmarks()):
             book = get_book(bookmark["book_id"])
             if book is not None:
                 bookmarks.append(bookmark)
 
         return bookmarks
+
+    def get_recent_bookmark_for_book(self, book_id):
+        if not hasattr(bookmark_manager, "get_bookmarks"):
+            return None
+
+        for bookmark in reversed(bookmark_manager.get_bookmarks()):
+            if bookmark["book_id"] == book_id:
+                return bookmark
+
+        return None
 
     def get_total_pages(self, book_id):
         if book_id in self.total_pages_cache:
@@ -131,26 +150,26 @@ class EPaperApp:
 
     def get_rendered_page(self, book_id, page_index, max_width, max_height):
         cache_key = (book_id, page_index, max_width, max_height)
+
         if cache_key in self.page_cache:
             return self.page_cache[cache_key].copy()
 
         book = get_book(book_id)
         if book is None:
-            image = Image.new("1", (max_width, max_height), 255)
-            return image
+            return Image.new("1", (max_width, max_height), 255)
 
         doc = fitz.open(book["path"])
         page = doc.load_page(page_index)
         rect = page.rect
 
-        margin_x = rect.width * 0.075
-        margin_y = rect.height * 0.055
+        margin_x = rect.width * 0.05
+        margin_y = rect.height * 0.035
 
         crop_rect = fitz.Rect(
             rect.x0 + margin_x,
             rect.y0 + margin_y,
             rect.x1 - margin_x,
-            rect.y1 - margin_y
+            rect.y1 - margin_y,
         )
 
         zoom = min(max_width / crop_rect.width, max_height / crop_rect.height) * 1.9
@@ -160,12 +179,12 @@ class EPaperApp:
             matrix=matrix,
             colorspace=fitz.csGRAY,
             alpha=False,
-            clip=crop_rect
+            clip=crop_rect,
         )
+
         image = Image.frombytes("L", [pix.width, pix.height], pix.samples)
         image = ImageOps.autocontrast(image)
         image.thumbnail((max_width, max_height))
-
         image = image.point(lambda p: 0 if p < 185 else 255, mode="1")
 
         doc.close()
@@ -181,6 +200,7 @@ class EPaperApp:
     def partial_limit(self):
         if self.screen == "reader":
             return READER_PARTIAL_LIMIT
+
         return MENU_PARTIAL_LIMIT
 
     def show_current(self, mode="full"):
@@ -211,8 +231,14 @@ class EPaperApp:
         if self.screen == "read":
             return self.render_read()
 
+        if self.screen == "read_actions":
+            return self.render_read_actions()
+
         if self.screen == "bookmarks":
             return self.render_bookmarks()
+
+        if self.screen == "bookmark_actions":
+            return self.render_bookmark_actions()
 
         if self.screen == "reader":
             return self.render_reader()
@@ -269,20 +295,96 @@ class EPaperApp:
             start = max(0, end - max_visible)
 
         y = 140
+
         for i in range(start, end):
             book = books[i]
             selected = i == self.list_index
 
             title = self.clip_text(book["title"], 28)
             line = f"> {title}" if selected else title
+
             draw.text((42, y), line, font=item_font, fill=0)
 
             saved_page = progress_manager.get_page(book["id"]) + 1
-            draw.text((62, y + 24), f"page {saved_page}", font=small_font, fill=0)
+            recent = self.get_recent_bookmark_for_book(book["id"])
+
+            if recent is None:
+                subline = f"last read: page {saved_page}"
+            else:
+                subline = f"last read: {saved_page} | recent mark: {recent['page'] + 1}"
+
+            draw.text((62, y + 24), subline, font=small_font, fill=0)
 
             y += 72
 
-        draw.text((42, 740), "select = open book", font=small_font, fill=0)
+        draw.text((42, 740), "select = book options", font=small_font, fill=0)
+
+        return image
+
+    def get_read_actions(self):
+        books = get_books()
+
+        if not books:
+            return []
+
+        book = books[self.list_index]
+        book_id = book["id"]
+
+        actions = [
+            {
+                "label": f"continue page {progress_manager.get_page(book_id) + 1}",
+                "page": progress_manager.get_page(book_id),
+            }
+        ]
+
+        recent = self.get_recent_bookmark_for_book(book_id)
+
+        if recent is not None:
+            actions.append(
+                {
+                    "label": f"recent bookmark page {recent['page'] + 1}",
+                    "page": recent["page"],
+                }
+            )
+
+        actions.append(
+            {
+                "label": "start from beginning",
+                "page": 0,
+            }
+        )
+
+        return actions
+
+    def render_read_actions(self):
+        image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
+        draw = ImageDraw.Draw(image)
+
+        title_font = self.load_font(26)
+        item_font = self.load_font(20)
+        small_font = self.load_font(13)
+
+        books = get_books()
+
+        if not books:
+            draw.text((42, 120), "no book selected", font=item_font, fill=0)
+            return image
+
+        book = books[self.list_index]
+
+        draw.text((42, 54), "open book", font=title_font, fill=0)
+        draw.text((42, 110), self.clip_text(book["title"], 30), font=small_font, fill=0)
+
+        actions = self.get_read_actions()
+
+        y = 210
+
+        for i, action in enumerate(actions):
+            text = f"> {action['label']}" if i == self.action_index else action["label"]
+            draw.text((60, y), text, font=item_font, fill=0)
+            y += 60
+
+        draw.text((42, 740), "select opens | back returns", font=small_font, fill=0)
 
         return image
 
@@ -311,18 +413,65 @@ class EPaperApp:
             start = max(0, end - max_visible)
 
         y = 132
+
         for i in range(start, end):
             bookmark = bookmarks[i]
             selected = i == self.list_index
 
             title = self.clip_text(bookmark["book_title"], 22)
             line = f"> {title}" if selected else title
+
             draw.text((42, y), line, font=item_font, fill=0)
             draw.text((62, y + 24), f"page {bookmark['page'] + 1}", font=small_font, fill=0)
 
             y += 72
 
-        draw.text((42, 740), "select = open bookmark", font=small_font, fill=0)
+        draw.text((42, 740), "select = bookmark options", font=small_font, fill=0)
+
+        return image
+
+    def get_bookmark_actions(self):
+        return [
+            {
+                "label": "open bookmark",
+                "type": "open",
+            },
+            {
+                "label": "delete bookmark",
+                "type": "delete",
+            },
+        ]
+
+    def render_bookmark_actions(self):
+        image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
+        draw = ImageDraw.Draw(image)
+
+        title_font = self.load_font(26)
+        item_font = self.load_font(20)
+        small_font = self.load_font(13)
+
+        bookmarks = self.get_bookmarks()
+
+        if not bookmarks:
+            draw.text((42, 120), "no bookmark selected", font=item_font, fill=0)
+            return image
+
+        bookmark = bookmarks[self.list_index]
+
+        draw.text((42, 54), "bookmark", font=title_font, fill=0)
+        draw.text((42, 110), self.clip_text(bookmark["book_title"], 30), font=small_font, fill=0)
+        draw.text((42, 135), f"page {bookmark['page'] + 1}", font=small_font, fill=0)
+
+        actions = self.get_bookmark_actions()
+
+        y = 230
+
+        for i, action in enumerate(actions):
+            text = f"> {action['label']}" if i == self.action_index else action["label"]
+            draw.text((60, y), text, font=item_font, fill=0)
+            y += 60
+
+        draw.text((42, 740), "select acts | back returns", font=small_font, fill=0)
 
         return image
 
@@ -349,16 +498,16 @@ class EPaperApp:
             draw.text((42, 100), "no book open", font=self.load_font(22), fill=0)
             return image
 
-        content_x = 24
-        content_y = 18
-        content_width = 432
-        content_height = 720
+        content_x = 8
+        content_y = 8
+        content_width = 464
+        content_height = 748
 
         page_image = self.get_rendered_page(
             self.current_book_id,
             self.current_page,
             content_width,
-            content_height
+            content_height,
         )
 
         paste_x = content_x + (content_width - page_image.width) // 2
@@ -370,15 +519,16 @@ class EPaperApp:
 
         total_pages = self.get_total_pages(self.current_book_id)
         footer = f"{self.current_page + 1} / {total_pages}"
-        draw.text((24, 760), footer, font=small_font, fill=0)
+        draw.text((18, 770), footer, font=small_font, fill=0)
 
         if self.reader_message:
-            draw.text((350, 760), self.reader_message, font=small_font, fill=0)
+            draw.text((332, 770), self.reader_message, font=small_font, fill=0)
 
         return image
 
     def enter_reader(self, book_id, page):
         total_pages = self.get_total_pages(book_id)
+
         if total_pages <= 0:
             return
 
@@ -404,11 +554,24 @@ class EPaperApp:
                 self.show_current("partial")
             return
 
+        if self.screen == "read_actions":
+            actions = self.get_read_actions()
+            if actions:
+                self.action_index = (self.action_index - 1) % len(actions)
+                self.show_current("partial")
+            return
+
         if self.screen == "bookmarks":
             bookmarks = self.get_bookmarks()
             if bookmarks:
                 self.list_index = (self.list_index - 1) % len(bookmarks)
                 self.show_current("partial")
+            return
+
+        if self.screen == "bookmark_actions":
+            actions = self.get_bookmark_actions()
+            self.action_index = (self.action_index - 1) % len(actions)
+            self.show_current("partial")
             return
 
         if self.screen == "reader":
@@ -432,11 +595,24 @@ class EPaperApp:
                 self.show_current("partial")
             return
 
+        if self.screen == "read_actions":
+            actions = self.get_read_actions()
+            if actions:
+                self.action_index = (self.action_index + 1) % len(actions)
+                self.show_current("partial")
+            return
+
         if self.screen == "bookmarks":
             bookmarks = self.get_bookmarks()
             if bookmarks:
                 self.list_index = (self.list_index + 1) % len(bookmarks)
                 self.show_current("partial")
+            return
+
+        if self.screen == "bookmark_actions":
+            actions = self.get_bookmark_actions()
+            self.action_index = (self.action_index + 1) % len(actions)
+            self.show_current("partial")
             return
 
         if self.screen == "reader":
@@ -455,12 +631,14 @@ class EPaperApp:
             if choice == "read":
                 self.screen = "read"
                 self.list_index = 0
+                self.action_index = 0
                 self.show_current("full")
                 return
 
             if choice == "bookmarks":
                 self.screen = "bookmarks"
                 self.list_index = 0
+                self.action_index = 0
                 self.show_current("full")
                 return
 
@@ -472,26 +650,76 @@ class EPaperApp:
         if self.screen == "read":
             books = get_books()
             if books:
+                self.screen = "read_actions"
+                self.action_index = 0
+                self.show_current("partial")
+            return
+
+        if self.screen == "read_actions":
+            books = get_books()
+            actions = self.get_read_actions()
+
+            if books and actions:
                 book = books[self.list_index]
-                start_page = progress_manager.get_page(book["id"])
-                self.enter_reader(book["id"], start_page)
+                page = actions[self.action_index]["page"]
+                self.enter_reader(book["id"], page)
             return
 
         if self.screen == "bookmarks":
             bookmarks = self.get_bookmarks()
             if bookmarks:
-                bookmark = bookmarks[self.list_index]
-                self.enter_reader(bookmark["book_id"], bookmark["page"])
+                self.screen = "bookmark_actions"
+                self.action_index = 0
+                self.show_current("partial")
             return
+
+        if self.screen == "bookmark_actions":
+            bookmarks = self.get_bookmarks()
+
+            if not bookmarks:
+                self.screen = "bookmarks"
+                self.show_current("full")
+                return
+
+            bookmark = bookmarks[self.list_index]
+            action = self.get_bookmark_actions()[self.action_index]
+
+            if action["type"] == "open":
+                self.enter_reader(bookmark["book_id"], bookmark["page"])
+                return
+
+            if action["type"] == "delete":
+                self.remove_bookmark(bookmark["id"])
+                self.screen = "bookmarks"
+                self.action_index = 0
+
+                new_bookmarks = self.get_bookmarks()
+                if self.list_index >= len(new_bookmarks):
+                    self.list_index = max(0, len(new_bookmarks) - 1)
+
+                self.show_current("full")
+                return
 
         if self.screen == "reader":
             self.add_bookmark(self.current_book_id, self.current_page)
-            self.reader_message = "marked"
+            self.reader_message = "bookmarked"
             self.show_current("partial")
             return
 
     def handle_back(self):
         if self.screen == "home":
+            return
+
+        if self.screen == "read_actions":
+            self.screen = "read"
+            self.action_index = 0
+            self.show_current("partial")
+            return
+
+        if self.screen == "bookmark_actions":
+            self.screen = "bookmarks"
+            self.action_index = 0
+            self.show_current("partial")
             return
 
         if self.screen == "reader":
@@ -508,7 +736,7 @@ class EPaperApp:
 
         try:
             while True:
-                command = input("Command (w/s/e/q/x): ").strip().lower()
+                command = input("Command (w/s/e/q/f/x): ").strip().lower()
 
                 if command == "w":
                     self.handle_up()
@@ -518,6 +746,8 @@ class EPaperApp:
                     self.handle_select()
                 elif command == "q":
                     self.handle_back()
+                elif command == "f":
+                    self.show_current("full")
                 elif command == "x":
                     break
 
