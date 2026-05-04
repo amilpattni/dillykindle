@@ -143,10 +143,25 @@ class EPaperApp:
         page = doc.load_page(page_index)
         rect = page.rect
 
-        zoom = min(max_width / rect.width, max_height / rect.height) * 1.8
+        margin_x = rect.width * 0.075
+        margin_y = rect.height * 0.055
+
+        crop_rect = fitz.Rect(
+            rect.x0 + margin_x,
+            rect.y0 + margin_y,
+            rect.x1 - margin_x,
+            rect.y1 - margin_y
+        )
+
+        zoom = min(max_width / crop_rect.width, max_height / crop_rect.height) * 1.9
         matrix = fitz.Matrix(zoom, zoom)
 
-        pix = page.get_pixmap(matrix=matrix, colorspace=fitz.csGRAY, alpha=False)
+        pix = page.get_pixmap(
+            matrix=matrix,
+            colorspace=fitz.csGRAY,
+            alpha=False,
+            clip=crop_rect
+        )
         image = Image.frombytes("L", [pix.width, pix.height], pix.samples)
         image = ImageOps.autocontrast(image)
         image.thumbnail((max_width, max_height))
