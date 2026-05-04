@@ -5,8 +5,8 @@ class HardwareButtonController:
         self.app = app
 
         self.buttons = {
-            "up": Button(17, pull_up=True, bounce_time=0.08),
-            "down": Button(27, pull_up=True, bounce_time=0.08),
+            "up": Button(5, pull_up=True, bounce_time=0.08),
+            "down": Button(6, pull_up=True, bounce_time=0.08),
             "select": Button(22, pull_up=True, bounce_time=0.08),
             "back": Button(23, pull_up=True, bounce_time=0.08),
         }
