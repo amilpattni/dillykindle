@@ -267,18 +267,20 @@ class EPaperApp:
         title_font = self.load_font(34)
         subtitle_font = self.load_font(16)
         menu_font = self.load_font(22)
-        small_font = self.load_font(14)
+        love_font = self.load_font(13)
 
         draw.text((42, 70), "dillykindle", font=title_font, fill=0)
         draw.text((42, 120), "for when diya wants to read", font=subtitle_font, fill=0)
 
-        y_positions = [260, 320, 380]
+        y_positions = [250, 302, 354]
 
         for i, option in enumerate(HOME_OPTIONS):
             text = f"> {option} <" if i == self.home_index else option
             draw.text((70, y_positions[i]), text, font=menu_font, fill=0)
 
-        home_image_path = Path("app/assets/home_image.jpg")
+        home_image_path = Path(__file__).resolve().parents[1] / "assets" / "home_image.png"
+
+        image_bottom = 650
 
         if home_image_path.exists():
             plush = Image.open(home_image_path).convert("L")
@@ -287,16 +289,16 @@ class EPaperApp:
             plush = plush.point(lambda p: 0 if p < 190 else 255, mode="1")
 
             x = (PORTRAIT_WIDTH - plush.width) // 2
-            y = 470
+            y = 430
             image.paste(plush, (x, y))
+            image_bottom = y + plush.height
 
-            love_font = self.load_font(13)
-            love_text = "i <3 u"
-            text_box = draw.textbbox((0, 0), love_text, font=love_font)
-            text_width = text_box[2] - text_box[0]
-            text_x = (PORTRAIT_WIDTH - text_width) // 2
-            text_y = y + plush.height + 10
-            draw.text((text_x, text_y), love_text, font=love_font, fill=0)
+        love_text = "i <3 u"
+        text_box = draw.textbbox((0, 0), love_text, font=love_font)
+        text_width = text_box[2] - text_box[0]
+        text_x = (PORTRAIT_WIDTH - text_width) // 2
+        text_y = image_bottom + 10
+        draw.text((text_x, text_y), love_text, font=love_font, fill=0)
 
         return image
 
