@@ -333,7 +333,7 @@ class EPaperApp:
         subtitle_font = self.load_font(16)
         menu_font = self.load_font(22)
 
-        draw.text((42, 70), "dillykindle", font=title_font, fill=0)
+        draw.text((42, 70), "dindle", font=title_font, fill=0)
         draw.text((42, 120), "for when diya wants to read", font=subtitle_font, fill=0)
 
         y_positions = [250, 302, 354]
