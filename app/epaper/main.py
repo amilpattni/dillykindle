@@ -277,7 +277,10 @@ class EPaperApp:
 
         for i, option in enumerate(HOME_OPTIONS):
             text = f"> {option} <" if i == self.home_index else option
-            draw.text((70, y_positions[i]), text, font=menu_font, fill=0)
+            text_box = draw.textbbox((0, 0), text, font=menu_font)
+            text_width = text_box[2] - text_box[0]
+            text_x = (PORTRAIT_WIDTH - text_width) // 2
+            draw.text((text_x, y_positions[i]), text, font=menu_font, fill=0)
 
         assets_dir = Path(__file__).resolve().parents[1] / "assets"
 
@@ -294,7 +297,7 @@ class EPaperApp:
                 home_image_path = possible_image
                 break
 
-        image_bottom = 650
+        image_bottom = 690
 
         if home_image_path is not None:
             plush = Image.open(home_image_path).convert("L")
@@ -303,7 +306,7 @@ class EPaperApp:
             plush = plush.point(lambda p: 0 if p < 190 else 255, mode="1")
 
             x = (PORTRAIT_WIDTH - plush.width) // 2
-            y = 430
+            y = 500
             image.paste(plush, (x, y))
             image_bottom = y + plush.height
         else:
