@@ -290,6 +290,14 @@ class EPaperApp:
             y = 470
             image.paste(plush, (x, y))
 
+            love_font = self.load_font(13)
+            love_text = "i <3 u"
+            text_box = draw.textbbox((0, 0), love_text, font=love_font)
+            text_width = text_box[2] - text_box[0]
+            text_x = (PORTRAIT_WIDTH - text_width) // 2
+            text_y = y + plush.height + 10
+            draw.text((text_x, text_y), love_text, font=love_font, fill=0)
+
         return image
 
     def render_read(self):
