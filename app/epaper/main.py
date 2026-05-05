@@ -15,7 +15,7 @@ PORTRAIT_HEIGHT = 800
 
 HOME_OPTIONS = ["read", "edit books", "bookmarks"]
 
-MENU_PARTIAL_LIMIT = 14
+MENU_PARTIAL_LIMIT = 40
 READER_PARTIAL_LIMIT = 10
 
 
@@ -257,7 +257,7 @@ class EPaperApp:
 
         title_font = self.load_font(34)
         subtitle_font = self.load_font(16)
-        menu_font = self.load_font(26)
+        menu_font = self.load_font(22)
         small_font = self.load_font(14)
 
         draw.text((42, 70), "dillykindle", font=title_font, fill=0)
@@ -324,7 +324,7 @@ class EPaperApp:
         book = books[self.list_index]
         continue_page = progress_manager.get_page(book["id"]) + 1
 
-        continue_label = f"continue book pg({continue_page})"
+        continue_label = f"continue reading pg {continue_page}"
         start_label = "start book"
 
         if self.read_focus == "actions" and self.action_index == 0:
@@ -734,7 +734,7 @@ class EPaperApp:
                 if self.list_index >= len(updated):
                     self.list_index = max(0, len(updated) - 1)
 
-                self.show_current("full")
+                self.show_current("partial")
                 return
 
         if self.screen == "reader":
