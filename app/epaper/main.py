@@ -318,9 +318,9 @@ class EPaperApp:
         z_mid_font = self.load_font(22)
         z_small_font = self.load_font(17)
 
-        draw.text((150, 390), "Z", font=z_big_font, fill=0)
-        draw.text((205, 355), "z", font=z_mid_font, fill=0)
-        draw.text((255, 325), "z", font=z_small_font, fill=0)
+        draw.text((145, 315), "Z", font=z_big_font, fill=0)
+        draw.text((188, 355), "z", font=z_mid_font, fill=0)
+        draw.text((245, 398), "z", font=z_small_font, fill=0)
 
         self.paste_home_art(image, draw)
         return image
