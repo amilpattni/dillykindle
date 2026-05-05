@@ -352,7 +352,7 @@ class EPaperApp:
             book = books[i]
             selected = i == self.list_index and self.read_focus == "list"
 
-            title = self.clip_text(book["title"], 28)
+            title = self.clip_text(book["title"], 34)
             line = f"> {title}" if selected else title
 
             draw.text((42, y), line, font=item_font, fill=0)
@@ -444,7 +444,7 @@ class EPaperApp:
         book = books[self.list_index]
 
         draw.text((42, 54), "open book", font=title_font, fill=0)
-        draw.text((42, 110), self.clip_text(book["title"], 30), font=small_font, fill=0)
+        draw.text((42, 110), self.clip_text(book["title"], 36), font=small_font, fill=0)
 
         actions = self.get_read_actions()
 
@@ -490,7 +490,7 @@ class EPaperApp:
             bookmark = bookmarks[i]
             selected = i == self.list_index and self.bookmark_focus == "list"
 
-            title = self.clip_text(bookmark["book_title"], 24)
+            title = self.clip_text(bookmark["book_title"], 36)
             line = f"> {title}" if selected else title
 
             draw.text((42, y), line, font=item_font, fill=0)
@@ -547,7 +547,7 @@ class EPaperApp:
         bookmark = bookmarks[self.list_index]
 
         draw.text((42, 54), "bookmark", font=title_font, fill=0)
-        draw.text((42, 110), self.clip_text(bookmark["book_title"], 30), font=small_font, fill=0)
+        draw.text((42, 110), self.clip_text(bookmark["book_title"], 36), font=small_font, fill=0)
         draw.text((42, 135), f"page {bookmark['page'] + 1}", font=small_font, fill=0)
 
         actions = self.get_bookmark_actions()
@@ -657,7 +657,7 @@ class EPaperApp:
             item = items[i]
             selected = i == self.edit_index and self.edit_focus == "list"
 
-            label = self.clip_text(item["label"], 28)
+            label = self.clip_text(item["label"], 34)
             line = f"> {label}" if selected else label
 
             draw.text((42, y), line, font=item_font, fill=0)
@@ -729,7 +729,7 @@ class EPaperApp:
             pdf = self.usb_pdfs[i]
             selected = i == self.usb_index
 
-            label = self.clip_text(pdf.name, 30)
+            label = self.clip_text(pdf.name, 38)
             line = f"> {label}" if selected else label
 
             draw.text((42, y), line, font=item_font, fill=0)
@@ -993,17 +993,18 @@ class EPaperApp:
             item = items[self.edit_index]
 
             if self.edit_focus == "list":
-                self.edit_focus = "actions"
-                self.show_current("partial")
-                return
+                if item["type"] == "add":
+                    self.usb_pdfs = self.get_usb_book_pdfs()
+                    self.usb_index = 0
+                    self.screen = "usb_import"
+                    self.edit_focus = "list"
+                    self.show_current("partial")
+                    return
 
-            if item["type"] == "add":
-                self.usb_pdfs = self.get_usb_book_pdfs()
-                self.usb_index = 0
-                self.screen = "usb_import"
-                self.edit_focus = "list"
-                self.show_current("partial")
-                return
+                if item["type"] == "book":
+                    self.edit_focus = "actions"
+                    self.show_current("partial")
+                    return
 
             if item["type"] == "book":
                 title = item["book"]["title"]
