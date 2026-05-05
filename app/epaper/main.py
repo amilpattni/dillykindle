@@ -5,7 +5,7 @@ from textwrap import shorten
 import fitz
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-from app.core.book_manager import get_books, get_book
+from app.core.book_manager import get_books, get_book, add_book, remove_book
 from app.core import bookmark_manager, progress_manager
 from app.epaper.display import EPaperDisplay
 
@@ -35,6 +35,12 @@ class EPaperApp:
 
         self.read_focus = "list"
         self.bookmark_focus = "list"
+        self.edit_focus = "list"
+        self.edit_index = 0
+        self.edit_action_index = 0
+        self.usb_index = 0
+        self.usb_pdfs = []
+        self.edit_status = ""
 
         self.partial_count_since_full = 0
 
@@ -247,7 +253,10 @@ class EPaperApp:
             return self.render_reader()
 
         if self.screen == "edit books":
-            return self.render_edit_placeholder()
+            return self.render_edit_books()
+
+        if self.screen == "usb_import":
+            return self.render_usb_import()
 
         return self.render_edit_placeholder()
 
@@ -269,7 +278,7 @@ class EPaperApp:
             text = f"> {option} <" if i == self.home_index else option
             draw.text((70, y_positions[i]), text, font=menu_font, fill=0)
 
-        draw.text((42, 730), "w/s move  e select  q back  x exit", font=small_font, fill=0)
+        # no control legend on home screen
 
         return image
 
@@ -515,18 +524,181 @@ class EPaperApp:
 
         return image
 
-    def render_edit_placeholder(self):
+    def get_usb_roots(self):
+        username = Path.home().name
+
+        roots = [
+            Path("/media") / username,
+            Path("/run/media") / username,
+        ]
+
+        usb_roots = []
+
+        for root in roots:
+            if not root.exists():
+                continue
+
+            for item in sorted(root.iterdir()):
+                if item.is_dir():
+                    usb_roots.append(item)
+
+        return usb_roots
+
+    def get_usb_book_pdfs(self):
+        pdfs = []
+
+        for usb_root in self.get_usb_roots():
+            book_folder = usb_root / "e-reader_books"
+
+            if not book_folder.exists() or not book_folder.is_dir():
+                continue
+
+            for file in sorted(book_folder.glob("*.pdf")):
+                pdfs.append(file)
+
+            for file in sorted(book_folder.glob("*.PDF")):
+                pdfs.append(file)
+
+        unique = []
+        seen = set()
+
+        for pdf in pdfs:
+            resolved = str(pdf.resolve())
+            if resolved not in seen:
+                unique.append(pdf)
+                seen.add(resolved)
+
+        return unique
+
+    def get_edit_items(self):
+        items = [
+            {
+                "type": "add",
+                "label": "add new book",
+            }
+        ]
+
+        for book in get_books():
+            items.append(
+                {
+                    "type": "book",
+                    "label": book["title"],
+                    "book": book,
+                }
+            )
+
+        return items
+
+    def render_edit_books(self):
+        image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
+        draw = ImageDraw.Draw(image)
+
+        title_font = self.load_font(30)
+        item_font = self.load_font(17)
+        small_font = self.load_font(12)
+        action_font = self.load_font(14)
+
+        draw.text((42, 54), "edit books", font=title_font, fill=0)
+
+        items = self.get_edit_items()
+
+        if self.edit_index >= len(items):
+            self.edit_index = max(0, len(items) - 1)
+
+        max_visible = 7
+        start = max(0, self.edit_index - max_visible // 2)
+        end = min(len(items), start + max_visible)
+
+        if end - start < max_visible:
+            start = max(0, end - max_visible)
+
+        y = 118
+
+        for i in range(start, end):
+            item = items[i]
+            selected = i == self.edit_index and self.edit_focus == "list"
+
+            label = self.clip_text(item["label"], 28)
+            line = f"> {label}" if selected else label
+
+            draw.text((42, y), line, font=item_font, fill=0)
+
+            if item["type"] == "add":
+                draw.text((62, y + 23), "from usb/e-reader_books", font=small_font, fill=0)
+            else:
+                draw.text((62, y + 23), "imported book", font=small_font, fill=0)
+
+            y += 68
+
+        selected_item = items[self.edit_index]
+
+        draw.line((28, 688, 452, 688), fill=0, width=1)
+
+        if selected_item["type"] == "add":
+            action = "add from usb"
+            if self.edit_focus == "actions":
+                action = f"> {action} <"
+
+            draw.text((40, 718), action, font=action_font, fill=0)
+
+        else:
+            action = "remove book"
+            if self.edit_focus == "actions":
+                action = f"> {action} <"
+
+            draw.text((40, 718), action, font=action_font, fill=0)
+
+        if self.edit_status:
+            draw.text((40, 760), self.clip_text(self.edit_status, 42), font=small_font, fill=0)
+        elif self.edit_focus == "list":
+            draw.text((300, 736), "select item", font=small_font, fill=0)
+        else:
+            draw.text((300, 736), "select action", font=small_font, fill=0)
+
+        return image
+
+    def render_usb_import(self):
         image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
         draw = ImageDraw.Draw(image)
 
         title_font = self.load_font(28)
-        body_font = self.load_font(18)
-        small_font = self.load_font(13)
+        item_font = self.load_font(16)
+        small_font = self.load_font(12)
 
-        draw.text((42, 70), "edit books", font=title_font, fill=0)
-        draw.text((42, 180), "not built in e-paper mode yet", font=body_font, fill=0)
-        draw.text((42, 220), "for now use the desktop version", font=body_font, fill=0)
-        draw.text((42, 740), "press q to go home", font=small_font, fill=0)
+        draw.text((42, 54), "add book", font=title_font, fill=0)
+        draw.text((42, 96), "usb folder: e-reader_books", font=small_font, fill=0)
+
+        if not self.usb_pdfs:
+            draw.text((42, 180), "no pdfs found", font=item_font, fill=0)
+            draw.text((42, 220), "put pdfs in usb/e-reader_books", font=item_font, fill=0)
+            draw.text((42, 740), "back returns", font=small_font, fill=0)
+            return image
+
+        if self.usb_index >= len(self.usb_pdfs):
+            self.usb_index = max(0, len(self.usb_pdfs) - 1)
+
+        max_visible = 8
+        start = max(0, self.usb_index - max_visible // 2)
+        end = min(len(self.usb_pdfs), start + max_visible)
+
+        if end - start < max_visible:
+            start = max(0, end - max_visible)
+
+        y = 136
+
+        for i in range(start, end):
+            pdf = self.usb_pdfs[i]
+            selected = i == self.usb_index
+
+            label = self.clip_text(pdf.name, 30)
+            line = f"> {label}" if selected else label
+
+            draw.text((42, y), line, font=item_font, fill=0)
+            y += 58
+
+        draw.line((28, 688, 452, 688), fill=0, width=1)
+        draw.text((40, 720), "select imports highlighted pdf", font=small_font, fill=0)
+        draw.text((40, 746), "back returns", font=small_font, fill=0)
 
         return image
 
@@ -613,6 +785,23 @@ class EPaperApp:
             self.show_current("partial")
             return
 
+        if self.screen == "edit books":
+            items = self.get_edit_items()
+            if not items:
+                return
+
+            if self.edit_focus == "list":
+                self.edit_index = (self.edit_index - 1) % len(items)
+
+            self.show_current("partial")
+            return
+
+        if self.screen == "usb_import":
+            if self.usb_pdfs:
+                self.usb_index = (self.usb_index - 1) % len(self.usb_pdfs)
+                self.show_current("partial")
+            return
+
         if self.screen == "reader":
             if self.current_page > 0:
                 self.current_page -= 1
@@ -653,6 +842,23 @@ class EPaperApp:
             self.show_current("partial")
             return
 
+        if self.screen == "edit books":
+            items = self.get_edit_items()
+            if not items:
+                return
+
+            if self.edit_focus == "list":
+                self.edit_index = (self.edit_index + 1) % len(items)
+
+            self.show_current("partial")
+            return
+
+        if self.screen == "usb_import":
+            if self.usb_pdfs:
+                self.usb_index = (self.usb_index + 1) % len(self.usb_pdfs)
+                self.show_current("partial")
+            return
+
         if self.screen == "reader":
             total_pages = self.get_total_pages(self.current_book_id)
             if self.current_page < total_pages - 1:
@@ -684,6 +890,9 @@ class EPaperApp:
 
             if choice == "edit books":
                 self.screen = "edit books"
+                self.edit_index = 0
+                self.edit_focus = "list"
+                self.edit_status = ""
                 self.show_current("partial")
                 return
 
@@ -737,6 +946,57 @@ class EPaperApp:
                 self.show_current("partial")
                 return
 
+        if self.screen == "edit books":
+            items = self.get_edit_items()
+            if not items:
+                return
+
+            item = items[self.edit_index]
+
+            if self.edit_focus == "list":
+                self.edit_focus = "actions"
+                self.show_current("partial")
+                return
+
+            if item["type"] == "add":
+                self.usb_pdfs = self.get_usb_book_pdfs()
+                self.usb_index = 0
+                self.screen = "usb_import"
+                self.edit_focus = "list"
+                self.show_current("partial")
+                return
+
+            if item["type"] == "book":
+                title = item["book"]["title"]
+                remove_book(item["book"]["id"], delete_file=True)
+                self.edit_status = f"removed: {title}"
+                self.edit_focus = "list"
+
+                updated_items = self.get_edit_items()
+                if self.edit_index >= len(updated_items):
+                    self.edit_index = max(0, len(updated_items) - 1)
+
+                self.show_current("partial")
+                return
+
+        if self.screen == "usb_import":
+            if not self.usb_pdfs:
+                return
+
+            pdf = self.usb_pdfs[self.usb_index]
+
+            try:
+                book = add_book(pdf)
+                self.edit_status = f"added: {book['title']}"
+            except Exception as error:
+                self.edit_status = f"add failed: {error}"
+
+            self.screen = "edit books"
+            self.edit_focus = "list"
+            self.edit_index = 0
+            self.show_current("partial")
+            return
+
         if self.screen == "reader":
             self.add_bookmark(self.current_book_id, self.current_page)
             self.reader_message = "bookmarked"
@@ -766,6 +1026,22 @@ class EPaperApp:
                 return
 
             self.screen = "home"
+            self.show_current("partial")
+            return
+
+        if self.screen == "edit books":
+            if self.edit_focus == "actions":
+                self.edit_focus = "list"
+                self.show_current("partial")
+                return
+
+            self.screen = "home"
+            self.show_current("partial")
+            return
+
+        if self.screen == "usb_import":
+            self.screen = "edit books"
+            self.edit_focus = "list"
             self.show_current("partial")
             return
 
