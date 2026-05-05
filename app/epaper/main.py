@@ -73,13 +73,13 @@ class EPaperApp:
         if len(text) <= width:
             return text
 
-        if width <= 6:
+        if width <= 8:
             return text[:width]
 
         front_count = max(1, (width - 3) // 2)
         back_count = max(1, width - 3 - front_count)
 
-        return f"{text[:front_count]}...{text[-back_count:]}"
+        return text[:front_count] + "..." + text[-back_count:]
 
     def save_progress(self, book_id, page):
         if hasattr(progress_manager, "set_page"):
