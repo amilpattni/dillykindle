@@ -68,7 +68,18 @@ class EPaperApp:
         return font
 
     def clip_text(self, text, width=26):
-        return shorten(text, width=width, placeholder="...")
+        text = str(text).strip()
+
+        if len(text) <= width:
+            return text
+
+        if width <= 6:
+            return text[:width]
+
+        front_count = max(1, (width - 3) // 2)
+        back_count = max(1, width - 3 - front_count)
+
+        return f"{text[:front_count]}...{text[-back_count:]}"
 
     def save_progress(self, book_id, page):
         if hasattr(progress_manager, "set_page"):
@@ -1113,6 +1124,15 @@ class EPaperApp:
                 elif command == "f":
                     self.show_current("full")
                 elif command == "x":
+                    self.screen = "home"
+                    self.home_index = 0
+                    self.list_index = 0
+                    self.action_index = 0
+                    self.read_focus = "list"
+                    self.bookmark_focus = "list"
+                    self.edit_focus = "list"
+                    self.reader_message = ""
+                    self.show_current("full")
                     break
 
         finally:
