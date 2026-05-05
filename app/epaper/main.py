@@ -268,6 +268,7 @@ class EPaperApp:
         subtitle_font = self.load_font(16)
         menu_font = self.load_font(22)
         love_font = self.load_font(13)
+        debug_font = self.load_font(10)
 
         draw.text((42, 70), "dillykindle", font=title_font, fill=0)
         draw.text((42, 120), "for when diya wants to read", font=subtitle_font, fill=0)
@@ -278,11 +279,24 @@ class EPaperApp:
             text = f"> {option} <" if i == self.home_index else option
             draw.text((70, y_positions[i]), text, font=menu_font, fill=0)
 
-        home_image_path = Path(__file__).resolve().parents[1] / "assets" / "home_image.png"
+        assets_dir = Path(__file__).resolve().parents[1] / "assets"
+
+        possible_images = [
+            assets_dir / "home_image.png",
+            assets_dir / "home_image.jpg",
+            assets_dir / "home_image.jpeg",
+        ]
+
+        home_image_path = None
+
+        for possible_image in possible_images:
+            if possible_image.exists():
+                home_image_path = possible_image
+                break
 
         image_bottom = 650
 
-        if home_image_path.exists():
+        if home_image_path is not None:
             plush = Image.open(home_image_path).convert("L")
             plush = ImageOps.autocontrast(plush)
             plush.thumbnail((250, 220))
@@ -292,6 +306,8 @@ class EPaperApp:
             y = 430
             image.paste(plush, (x, y))
             image_bottom = y + plush.height
+        else:
+            draw.text((42, 460), "home image missing", font=debug_font, fill=0)
 
         love_text = "i <3 u"
         text_box = draw.textbbox((0, 0), love_text, font=love_font)
