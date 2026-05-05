@@ -278,7 +278,17 @@ class EPaperApp:
             text = f"> {option} <" if i == self.home_index else option
             draw.text((70, y_positions[i]), text, font=menu_font, fill=0)
 
-        # no control legend on home screen
+        home_image_path = Path("app/assets/home_image.jpg")
+
+        if home_image_path.exists():
+            plush = Image.open(home_image_path).convert("L")
+            plush = ImageOps.autocontrast(plush)
+            plush.thumbnail((250, 220))
+            plush = plush.point(lambda p: 0 if p < 190 else 255, mode="1")
+
+            x = (PORTRAIT_WIDTH - plush.width) // 2
+            y = 470
+            image.paste(plush, (x, y))
 
         return image
 

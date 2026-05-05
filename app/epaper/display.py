@@ -23,8 +23,7 @@ class EPaperDisplay:
 
     def startup(self, portrait_image):
         image = self._to_display_image(portrait_image)
-        self.epd.init()
-        self.epd.Clear()
+        self.epd.init_fast()
         self.epd.display(self.epd.getbuffer(image))
         self.partial_mode = False
 
