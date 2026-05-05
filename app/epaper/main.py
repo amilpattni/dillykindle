@@ -271,44 +271,25 @@ class EPaperApp:
 
         return self.render_edit_placeholder()
 
-    def render_home(self):
-        image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
-        draw = ImageDraw.Draw(image)
-
-        title_font = self.load_font(34)
-        subtitle_font = self.load_font(16)
-        menu_font = self.load_font(22)
-        love_font = self.load_font(13)
-        debug_font = self.load_font(10)
-
-        draw.text((42, 70), "dillykindle", font=title_font, fill=0)
-        draw.text((42, 120), "for when diya wants to read", font=subtitle_font, fill=0)
-
-        y_positions = [250, 302, 354]
-
-        for i, option in enumerate(HOME_OPTIONS):
-            text = f"> {option} <" if i == self.home_index else option
-            text_box = draw.textbbox((0, 0), text, font=menu_font)
-            text_width = text_box[2] - text_box[0]
-            text_x = (PORTRAIT_WIDTH - text_width) // 2
-            draw.text((text_x, y_positions[i]), text, font=menu_font, fill=0)
-
+    def get_home_art_path(self):
         assets_dir = Path(__file__).resolve().parents[1] / "assets"
 
         possible_images = [
+            assets_dir / "home_screen.png",
             assets_dir / "home_image.png",
             assets_dir / "home_image.jpg",
             assets_dir / "home_image.jpeg",
         ]
 
-        home_image_path = None
+        for image_path in possible_images:
+            if image_path.exists():
+                return image_path
 
-        for possible_image in possible_images:
-            if possible_image.exists():
-                home_image_path = possible_image
-                break
+        return None
 
+    def paste_home_art(self, image, draw):
         image_bottom = 690
+        home_image_path = self.get_home_art_path()
 
         if home_image_path is not None:
             plush = Image.open(home_image_path).convert("L")
@@ -320,15 +301,42 @@ class EPaperApp:
             y = 500
             image.paste(plush, (x, y))
             image_bottom = y + plush.height
-        else:
-            draw.text((42, 460), "home image missing", font=debug_font, fill=0)
 
+        love_font = self.load_font(13)
         love_text = "i <3 u"
         text_box = draw.textbbox((0, 0), love_text, font=love_font)
         text_width = text_box[2] - text_box[0]
         text_x = (PORTRAIT_WIDTH - text_width) // 2
         text_y = image_bottom + 10
         draw.text((text_x, text_y), love_text, font=love_font, fill=0)
+
+    def render_sleep_screen(self):
+        image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
+        draw = ImageDraw.Draw(image)
+        self.paste_home_art(image, draw)
+        return image
+
+    def render_home(self):
+        image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
+        draw = ImageDraw.Draw(image)
+
+        title_font = self.load_font(34)
+        subtitle_font = self.load_font(16)
+        menu_font = self.load_font(22)
+
+        draw.text((42, 70), "dillykindle", font=title_font, fill=0)
+        draw.text((42, 120), "for when diya wants to read", font=subtitle_font, fill=0)
+
+        y_positions = [250, 302, 354]
+
+        for i, option in enumerate(HOME_OPTIONS):
+            menu_text = f"> {option} <" if i == self.home_index else option
+            text_box = draw.textbbox((0, 0), menu_text, font=menu_font)
+            text_width = text_box[2] - text_box[0]
+            text_x = (PORTRAIT_WIDTH - text_width) // 2
+            draw.text((text_x, y_positions[i]), menu_text, font=menu_font, fill=0)
+
+        self.paste_home_art(image, draw)
 
         return image
 
@@ -1124,15 +1132,8 @@ class EPaperApp:
                 elif command == "f":
                     self.show_current("full")
                 elif command == "x":
-                    self.screen = "home"
-                    self.home_index = 0
-                    self.list_index = 0
-                    self.action_index = 0
-                    self.read_focus = "list"
-                    self.bookmark_focus = "list"
-                    self.edit_focus = "list"
-                    self.reader_message = ""
-                    self.show_current("full")
+                    sleep_image = self.render_sleep_screen()
+                    self.display.full_refresh(sleep_image)
                     break
 
         finally:
