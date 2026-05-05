@@ -1128,7 +1128,7 @@ class EPaperApp:
 
         try:
             while True:
-                command = input("Command (w/s/e/q/f/x): ").strip().lower()
+                command = input("Command (w/s/e/q/x): ").strip().lower()
 
                 if command == "w":
                     self.handle_up()
@@ -1138,8 +1138,6 @@ class EPaperApp:
                     self.handle_select()
                 elif command == "q":
                     self.handle_back()
-                elif command == "f":
-                    self.show_current("full")
                 elif command == "x":
                     sleep_image = self.render_sleep_screen()
                     self.display.full_refresh(sleep_image)
