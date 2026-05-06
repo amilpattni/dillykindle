@@ -334,7 +334,7 @@ class EPaperApp:
         except Exception:
             title_font = self.load_font(16)
 
-        subtitle_font = self.load_font(13)
+        subtitle_font = self.load_font(16)
         menu_font = self.load_font(22)
 
         draw.text((42, 72), "dillykindle", font=title_font, fill=0)
