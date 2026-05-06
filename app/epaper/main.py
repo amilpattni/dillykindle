@@ -330,14 +330,14 @@ class EPaperApp:
         draw = ImageDraw.Draw(image)
 
         try:
-            title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 16)
+            title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 18)
         except Exception:
-            title_font = self.load_font(16)
+            title_font = self.load_font(18)
 
         subtitle_font = self.load_font(15)
         menu_font = self.load_font(22)
 
-        draw.text((42, 72), "dindle", font=title_font, fill=0)
+        draw.text((42, 72), "dillykindle", font=title_font, fill=0)
         draw.text((42, 96), "for when diya wants to read", font=subtitle_font, fill=0)
 
         y_positions = [250, 302, 354]
