@@ -334,10 +334,10 @@ class EPaperApp:
         except Exception:
             title_font = self.load_font(16)
 
-        subtitle_font = self.load_font(16)
+        subtitle_font = self.load_font(15)
         menu_font = self.load_font(22)
 
-        draw.text((42, 72), "dillykindle", font=title_font, fill=0)
+        draw.text((42, 72), "dindle", font=title_font, fill=0)
         draw.text((42, 96), "for when diya wants to read", font=subtitle_font, fill=0)
 
         y_positions = [250, 302, 354]
