@@ -329,7 +329,7 @@ class EPaperApp:
         image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
         draw = ImageDraw.Draw(image)
 
-        title_font = self.load_font(34)
+        title_font = self.load_font(22)
         subtitle_font = self.load_font(16)
         menu_font = self.load_font(22)
 
