@@ -1,0 +1,6 @@
+# Raspberry Pi Lite setup uses apt for:
+# - PyMuPDF / fitz
+# - Pillow
+# - GPIO / SPI
+#
+# Do not add pymupdf here.
