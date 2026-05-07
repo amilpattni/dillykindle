@@ -1,6 +1,8 @@
 import inspect
 from pathlib import Path
 from textwrap import shorten
+import socket
+import subprocess
 
 import fitz
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -38,8 +40,7 @@ class EPaperApp:
         self.edit_focus = "list"
         self.edit_index = 0
         self.edit_action_index = 0
-        self.usb_index = 0
-        self.usb_pdfs = []
+        self.upload_server_process = None
         self.edit_status = ""
 
         self.partial_count_since_full = 0
@@ -266,8 +267,8 @@ class EPaperApp:
         if self.screen == "edit books":
             return self.render_edit_books()
 
-        if self.screen == "usb_import":
-            return self.render_usb_import()
+        if self.screen == "upload_books":
+            return self.render_upload_books()
 
         return self.render_edit_placeholder()
 
@@ -660,6 +661,68 @@ class EPaperApp:
 
         return items
 
+
+
+    def get_local_ip(self):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.connect(("8.8.8.8", 80))
+            ip = sock.getsockname()[0]
+            sock.close()
+            return ip
+        except Exception:
+            return "192.168.4.1"
+
+    def start_upload_server(self):
+        if self.upload_server_process is not None:
+            return
+
+        self.upload_server_process = subprocess.Popen(
+            [
+                "/home/amil/dillykindle/.venv/bin/python",
+                "-m",
+                "app.web.upload_server",
+            ],
+            cwd="/home/amil/dillykindle",
+        )
+
+    def stop_upload_server(self):
+        if self.upload_server_process is None:
+            return
+
+        self.upload_server_process.terminate()
+
+        try:
+            self.upload_server_process.wait(timeout=3)
+        except Exception:
+            pass
+
+        self.upload_server_process = None
+
+    def render_upload_books(self):
+        image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
+        draw = ImageDraw.Draw(image)
+
+        title_font = self.load_font(28)
+        item_font = self.load_font(16)
+        small_font = self.load_font(12)
+
+        ip = self.get_local_ip()
+
+        draw.text((42, 54), "add books", font=title_font, fill=0)
+
+        draw.text((42, 170), "connect from computer:", font=item_font, fill=0)
+        draw.text((42, 250), f"http://{ip}:8080", font=item_font, fill=0)
+
+        draw.text((42, 360), "upload pdf files in browser", font=item_font, fill=0)
+
+        if self.edit_status:
+            draw.text((42, 460), self.clip_text(self.edit_status, 36), font=item_font, fill=0)
+
+        draw.text((42, 740), "back closes upload page", font=small_font, fill=0)
+
+        return image
+
     def render_edit_books(self):
         image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
         draw = ImageDraw.Draw(image)
@@ -695,7 +758,7 @@ class EPaperApp:
             draw.text((42, y), line, font=item_font, fill=0)
 
             if item["type"] == "add":
-                draw.text((62, y + 23), "from usb/e-reader_books", font=small_font, fill=0)
+                draw.text((62, y + 23), "upload over wifi", font=small_font, fill=0)
             else:
                 draw.text((62, y + 23), "imported book", font=small_font, fill=0)
 
@@ -706,7 +769,7 @@ class EPaperApp:
         draw.line((28, 688, 452, 688), fill=0, width=1)
 
         if selected_item["type"] == "add":
-            action = "add from usb"
+            action = "add books"
             if self.edit_focus == "actions":
                 action = f"> {action} <"
 
@@ -725,51 +788,6 @@ class EPaperApp:
             draw.text((300, 736), "select item", font=small_font, fill=0)
         else:
             draw.text((300, 736), "select action", font=small_font, fill=0)
-
-        return image
-
-    def render_usb_import(self):
-        image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
-        draw = ImageDraw.Draw(image)
-
-        title_font = self.load_font(28)
-        item_font = self.load_font(16)
-        small_font = self.load_font(12)
-
-        draw.text((42, 54), "add book", font=title_font, fill=0)
-        draw.text((42, 96), "usb folder: e-reader_books", font=small_font, fill=0)
-
-        if not self.usb_pdfs:
-            draw.text((42, 180), "no pdfs found", font=item_font, fill=0)
-            draw.text((42, 220), "put pdfs in usb/e-reader_books", font=item_font, fill=0)
-            draw.text((42, 740), "back returns", font=small_font, fill=0)
-            return image
-
-        if self.usb_index >= len(self.usb_pdfs):
-            self.usb_index = max(0, len(self.usb_pdfs) - 1)
-
-        max_visible = 8
-        start = max(0, self.usb_index - max_visible // 2)
-        end = min(len(self.usb_pdfs), start + max_visible)
-
-        if end - start < max_visible:
-            start = max(0, end - max_visible)
-
-        y = 136
-
-        for i in range(start, end):
-            pdf = self.usb_pdfs[i]
-            selected = i == self.usb_index
-
-            label = self.clip_text(pdf.name, 38)
-            line = f"> {label}" if selected else label
-
-            draw.text((42, y), line, font=item_font, fill=0)
-            y += 58
-
-        draw.line((28, 688, 452, 688), fill=0, width=1)
-        draw.text((40, 720), "select imports highlighted pdf", font=small_font, fill=0)
-        draw.text((40, 746), "back returns", font=small_font, fill=0)
 
         return image
 
@@ -865,12 +883,6 @@ class EPaperApp:
                 self.edit_index = (self.edit_index - 1) % len(items)
 
             self.show_current("partial")
-            return
-
-        if self.screen == "usb_import":
-            if self.usb_pdfs:
-                self.usb_index = (self.usb_index - 1) % len(self.usb_pdfs)
-                self.show_current("partial")
             return
 
         if self.screen == "reader":
@@ -1026,11 +1038,11 @@ class EPaperApp:
 
             if self.edit_focus == "list":
                 if item["type"] == "add":
-                    self.usb_pdfs = self.get_usb_book_pdfs()
-                    self.usb_index = 0
-                    self.screen = "usb_import"
+                    self.start_upload_server()
+                    self.edit_status = ""
+                    self.screen = "upload_books"
                     self.edit_focus = "list"
-                    self.show_current("partial")
+                    self.show_current("full")
                     return
 
                 if item["type"] == "book":
@@ -1111,10 +1123,11 @@ class EPaperApp:
             self.show_current("partial")
             return
 
-        if self.screen == "usb_import":
+        if self.screen == "upload_books":
+            self.stop_upload_server()
             self.screen = "edit books"
             self.edit_focus = "list"
-            self.show_current("partial")
+            self.show_current("full")
             return
 
         if self.screen == "reader":
