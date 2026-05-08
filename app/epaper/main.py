@@ -37,6 +37,7 @@ class EPaperApp:
         self.current_book_id = None
         self.current_page = 0
         self.reader_message = ""
+        self.reader_zoom = 1.0
 
         self.read_focus = "list"
         self.bookmark_focus = "list"
@@ -173,7 +174,7 @@ class EPaperApp:
         return total
 
     def get_rendered_page(self, book_id, page_index, max_width, max_height):
-        cache_key = (book_id, page_index, max_width, max_height)
+        cache_key = (book_id, page_index, max_width, max_height, round(self.reader_zoom, 2))
 
         if cache_key in self.page_cache:
             return self.page_cache[cache_key].copy()
@@ -196,8 +197,12 @@ class EPaperApp:
             rect.y1 - margin_y,
         )
 
-        zoom = min(max_width / crop_rect.width, max_height / crop_rect.height) * 1.9
-        matrix = fitz.Matrix(zoom, zoom)
+        visual_zoom = max(0.75, min(2.5, self.reader_zoom))
+
+        base_scale = min(max_width / crop_rect.width, max_height / crop_rect.height)
+
+        render_scale = base_scale * visual_zoom * 2.0
+        matrix = fitz.Matrix(render_scale, render_scale)
 
         pix = page.get_pixmap(
             matrix=matrix,
@@ -208,18 +213,35 @@ class EPaperApp:
 
         image = Image.frombytes("L", [pix.width, pix.height], pix.samples)
         image = ImageOps.autocontrast(image)
-        image.thumbnail((max_width, max_height))
-        image = image.point(lambda p: 0 if p < 185 else 255, mode="1")
+
+        target_width = max(1, int(max_width * visual_zoom))
+        target_height = max(1, int(max_height * visual_zoom))
+
+        image.thumbnail((target_width, target_height), Image.Resampling.LANCZOS)
+
+        canvas = Image.new("L", (max_width, max_height), 255)
+
+        if image.width <= max_width and image.height <= max_height:
+            paste_x = (max_width - image.width) // 2
+            paste_y = (max_height - image.height) // 2
+            canvas.paste(image, (paste_x, paste_y))
+        else:
+            left = max(0, (image.width - max_width) // 2)
+            top = max(0, (image.height - max_height) // 2)
+            cropped = image.crop((left, top, left + max_width, top + max_height))
+            canvas.paste(cropped, (0, 0))
+
+        canvas = canvas.point(lambda p: 0 if p < 185 else 255, mode="1")
 
         doc.close()
 
-        self.page_cache[cache_key] = image.copy()
+        self.page_cache[cache_key] = canvas.copy()
 
         if len(self.page_cache) > 8:
             first_key = next(iter(self.page_cache))
             del self.page_cache[first_key]
 
-        return image
+        return canvas
 
     def partial_limit(self):
         if self.screen == "reader":
@@ -806,10 +828,10 @@ class EPaperApp:
             draw.text((42, 100), "no book open", font=self.load_font(22), fill=0)
             return image
 
-        content_x = 8
-        content_y = 8
-        content_width = 464
-        content_height = 748
+        content_x = 0
+        content_y = 0
+        content_width = PORTRAIT_WIDTH
+        content_height = 778
 
         page_image = self.get_rendered_page(
             self.current_book_id,
@@ -827,10 +849,10 @@ class EPaperApp:
 
         total_pages = self.get_total_pages(self.current_book_id)
         footer = f"{self.current_page + 1} / {total_pages}"
-        draw.text((18, 770), footer, font=small_font, fill=0)
+        draw.text((8, 784), footer, font=small_font, fill=0)
 
         if self.reader_message:
-            draw.text((332, 770), self.reader_message, font=small_font, fill=0)
+            draw.text((272, 784), self.reader_message, font=small_font, fill=0)
 
         return image
 
@@ -1094,6 +1116,24 @@ class EPaperApp:
             self.show_current("partial")
             return
 
+    def handle_zoom_in(self):
+        if self.screen != "reader":
+            return
+
+        self.reader_zoom = min(2.5, self.reader_zoom + 0.02)
+        self.reader_message = f"zoom {self.reader_zoom:.2f}x"
+        self.page_cache.clear()
+        self.show_current("partial")
+
+    def handle_zoom_out(self):
+        if self.screen != "reader":
+            return
+
+        self.reader_zoom = max(0.75, self.reader_zoom - 0.02)
+        self.reader_message = f"zoom {self.reader_zoom:.2f}x"
+        self.page_cache.clear()
+        self.show_current("partial")
+
     def handle_back(self):
         if self.screen == "home":
             return
@@ -1175,6 +1215,10 @@ class EPaperApp:
                     self.handle_select()
                 elif command == "q":
                     self.handle_back()
+                elif command == "zoom_in":
+                    self.handle_zoom_in()
+                elif command == "zoom_out":
+                    self.handle_zoom_out()
                 elif command == "x":
                     sleep_image = self.render_sleep_screen()
                     self.display.full_refresh(sleep_image)
