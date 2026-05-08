@@ -18,3 +18,27 @@ cd dillykindle
 - Use ./setup_pi_lite.sh for Pi setup.
 - Use ./run_epaper.sh to start the e-paper app.
 - Books can be uploaded from Edit books -> Add books.
+
+## Pico button controller
+
+The Raspberry Pi Pico acts as a USB keyboard.
+
+Button mapping:
+
+- GP15 -> w + Enter -> up
+- GP11 -> s + Enter -> down
+- GP7 -> e + Enter -> select
+- GP3 -> q + Enter -> back
+- GP16 -> x + Enter -> sleep/exit
+
+Each button connects between its Pico GPIO pin and GND.
+
+To set up the Pico on a new Pi:
+
+1. Install CircuitPython on the Pico.
+2. Plug the Pico into the Pi.
+3. Run:
+
+./scripts/setup_pico_keyboard.sh
+
+The Pico can stay plugged in from boot. If the Pico does not reload immediately after setup, reboot the Pi.
