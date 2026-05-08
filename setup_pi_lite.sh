@@ -15,7 +15,8 @@ sudo apt install -y \
   python3-fitz \
   python3-spidev \
   python3-gpiozero \
-  python3-lgpio
+  python3-lgpio \
+  python3-serial
 
 if [ ! -d "waveshare_epd" ]; then
   tmp_dir="$(mktemp -d)"
@@ -32,6 +33,7 @@ python -m pip install --upgrade pip
 
 if [ -s requirements-pi.txt ]; then
   pip install -r requirements-pi.txt
+pip install pyserial
 fi
 
 python - <<'PY'

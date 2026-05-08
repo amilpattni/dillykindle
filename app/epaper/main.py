@@ -1,4 +1,6 @@
 import inspect
+import sys
+import select
 from pathlib import Path
 from textwrap import shorten
 import subprocess
@@ -8,6 +10,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from app.core.book_manager import get_books, get_book, add_book, remove_book
 from app.core import bookmark_manager, progress_manager
+from app.core.pico_serial_controller import PicoSerialController
 from app.epaper.display import EPaperDisplay
 from app.core.wifi_manager import wifi_status
 
@@ -1146,10 +1149,23 @@ class EPaperApp:
 
     def run(self):
         self.show_current("startup")
+        pico = PicoSerialController()
 
         try:
             while True:
-                command = input("Command (w/s/e/q/x): ").strip().lower()
+                command = pico.read_command()
+
+                if command is None:
+                    try:
+                        ready, _, _ = select.select([sys.stdin], [], [], 0.05)
+                    except Exception:
+                        ready = []
+
+                    if ready:
+                        command = sys.stdin.readline().strip().lower()
+
+                if not command:
+                    continue
 
                 if command == "w":
                     self.handle_up()
