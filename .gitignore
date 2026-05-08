@@ -1,15 +1,17 @@
 .venv/
-venv/
-
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+*.log
+.DS_Store
+
+app/epaper/main.py.bak
+
+dillykindle_uploads/
+
+data/bookmarks.json
+data/library.json
+data/progress.json
 
 books/
-data/
-cache/
-logs/
-
-.vscode/
-.DS_Store
-waveshare-e-Paper/

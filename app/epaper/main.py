@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from app.core.book_manager import get_books, get_book, add_book, remove_book
 from app.core import bookmark_manager, progress_manager
 from app.epaper.display import EPaperDisplay
-from app.core.wifi_manager import start_hotspot, stop_hotspot, wifi_status
+from app.core.wifi_manager import wifi_status
 
 
 PORTRAIT_WIDTH = 480
@@ -664,7 +664,18 @@ class EPaperApp:
 
 
     def get_local_ip(self):
-        return "10.42.0.1"
+        result = subprocess.run(
+            ["hostname", "-I"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        for ip in result.stdout.split():
+            if ip.startswith("192.") or ip.startswith("10.") or ip.startswith("172."):
+                return ip
+
+        return "localhost"
 
     def start_upload_server(self):
         if self.upload_server_process is not None:
