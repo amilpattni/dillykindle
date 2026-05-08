@@ -1,7 +1,6 @@
 import inspect
 from pathlib import Path
 from textwrap import shorten
-import socket
 import subprocess
 
 import fitz
@@ -10,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from app.core.book_manager import get_books, get_book, add_book, remove_book
 from app.core import bookmark_manager, progress_manager
 from app.epaper.display import EPaperDisplay
+from app.core.wifi_manager import start_hotspot, stop_hotspot, wifi_status
 
 
 PORTRAIT_WIDTH = 480
@@ -664,14 +664,7 @@ class EPaperApp:
 
 
     def get_local_ip(self):
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.connect(("8.8.8.8", 80))
-            ip = sock.getsockname()[0]
-            sock.close()
-            return ip
-        except Exception:
-            return "192.168.4.1"
+        return "10.42.0.1"
 
     def start_upload_server(self):
         if self.upload_server_process is not None:
