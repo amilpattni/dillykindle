@@ -42,3 +42,14 @@ To set up the Pico on a new Pi:
 ./scripts/setup_pico_keyboard.sh
 
 The Pico can stay plugged in from boot. If the Pico does not reload immediately after setup, reboot the Pi.
+
+
+## Reader zoom controls
+
+While reading:
+
+- Tap SELECT -> bookmark page
+- Hold SELECT + UP -> zoom in
+- Hold SELECT + DOWN -> zoom out
+
+Zoom is handled by the Pico sending serial commands `ZOOM_IN` and `ZOOM_OUT`.

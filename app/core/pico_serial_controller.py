@@ -13,6 +13,8 @@ COMMAND_MAP = {
     "SELECT": "e",
     "BACK": "q",
     "POWER": "x",
+    "ZOOM_IN": "zoom_in",
+    "ZOOM_OUT": "zoom_out",
 }
 
 

@@ -1,49 +1,81 @@
 import time
 import board
 import digitalio
-import usb_hid
+import usb_cdc
 
-from adafruit_hid.keyboard import Keyboard
-from adafruit_hid.keycode import Keycode
+COMMAND_PORT = usb_cdc.data
 
-keyboard = Keyboard(usb_hid.devices)
+PIN_MAP = {
+    "UP": board.GP15,
+    "DOWN": board.GP11,
+    "SELECT": board.GP7,
+    "BACK": board.GP3,
+    "POWER": board.GP16,
+}
 
-button_map = [
-    (board.GP15, Keycode.W),
-    (board.GP11, Keycode.S),
-    (board.GP7, Keycode.E),
-    (board.GP3, Keycode.Q),
-    (board.GP16, Keycode.X),
-]
+buttons = {}
 
-buttons = []
-
-for pin, key in button_map:
+for name, pin in PIN_MAP.items():
     button = digitalio.DigitalInOut(pin)
     button.direction = digitalio.Direction.INPUT
     button.pull = digitalio.Pull.UP
-    buttons.append({
+    buttons[name] = {
         "button": button,
-        "key": key,
         "was_pressed": False,
         "last_press_time": 0,
-    })
+    }
+
+select_consumed = False
+
+
+def send_command(command):
+    if COMMAND_PORT is not None:
+        COMMAND_PORT.write((command + "\n").encode("utf-8"))
+
 
 while True:
     now = time.monotonic()
 
-    for item in buttons:
-        is_pressed = not item["button"].value
+    pressed = {
+        name: not item["button"].value
+        for name, item in buttons.items()
+    }
 
-        if is_pressed and not item["was_pressed"] and now - item["last_press_time"] > 0.18:
-            keyboard.press(item["key"])
-            time.sleep(0.02)
-            keyboard.release(item["key"])
-            time.sleep(0.02)
-            keyboard.press(Keycode.ENTER)
-            time.sleep(0.02)
-            keyboard.release(Keycode.ENTER)
+    for name, item in buttons.items():
+        is_pressed = pressed[name]
+        was_pressed = item["was_pressed"]
+
+        if is_pressed and not was_pressed and now - item["last_press_time"] > 0.18:
+            if name == "UP":
+                if pressed["SELECT"]:
+                    send_command("ZOOM_IN")
+                    select_consumed = True
+                else:
+                    send_command("UP")
+
+            elif name == "DOWN":
+                if pressed["SELECT"]:
+                    send_command("ZOOM_OUT")
+                    select_consumed = True
+                else:
+                    send_command("DOWN")
+
+            elif name == "SELECT":
+                select_consumed = False
+
+            elif name == "BACK":
+                send_command("BACK")
+
+            elif name == "POWER":
+                send_command("POWER")
+
             item["last_press_time"] = now
+
+        if name == "SELECT" and was_pressed and not is_pressed:
+            if not select_consumed and now - item["last_press_time"] > 0.05:
+                send_command("SELECT")
+
+            select_consumed = False
 
         item["was_pressed"] = is_pressed
 
