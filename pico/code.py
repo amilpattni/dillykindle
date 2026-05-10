@@ -23,9 +23,12 @@ for name, pin in PIN_MAP.items():
         "button": button,
         "was_pressed": False,
         "last_press_time": 0,
+        "pressed_since": None,
+        "hold_sent": False,
     }
 
 select_consumed = False
+POWER_HOLD_SECONDS = 1.2
 
 
 def send_command(command):
@@ -41,7 +44,24 @@ while True:
         for name, item in buttons.items()
     }
 
+    power_item = buttons["POWER"]
+
+    if pressed["POWER"]:
+        if power_item["pressed_since"] is None:
+            power_item["pressed_since"] = now
+
+        if not power_item["hold_sent"] and now - power_item["pressed_since"] >= POWER_HOLD_SECONDS:
+            send_command("APP_SLEEP_TOGGLE")
+            power_item["hold_sent"] = True
+    else:
+        power_item["pressed_since"] = None
+        power_item["hold_sent"] = False
+
     for name, item in buttons.items():
+        if name == "POWER":
+            item["was_pressed"] = pressed[name]
+            continue
+
         is_pressed = pressed[name]
         was_pressed = item["was_pressed"]
 
@@ -65,9 +85,6 @@ while True:
 
             elif name == "BACK":
                 send_command("BACK")
-
-            elif name == "POWER":
-                send_command("POWER")
 
             item["last_press_time"] = now
 

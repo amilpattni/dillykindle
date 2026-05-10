@@ -38,6 +38,7 @@ class EPaperApp:
         self.current_book_id = None
         self.current_page = 0
         self.reader_message = ""
+        self.app_sleeping = False
         self.reader_zoom = 1.0
 
         self.read_focus = "list"
@@ -1135,6 +1136,16 @@ class EPaperApp:
         self.page_cache.clear()
         self.show_current("partial")
 
+    def handle_app_sleep_toggle(self):
+        if self.app_sleeping:
+            self.app_sleeping = False
+            self.show_current("full")
+            return
+
+        self.app_sleeping = True
+        sleep_image = self.render_sleep_screen()
+        self.display.full_refresh(sleep_image)
+
     def handle_back(self):
         if self.screen == "home":
             return
@@ -1211,7 +1222,12 @@ class EPaperApp:
                 if not command:
                     continue
 
-                if command == "w":
+                if self.app_sleeping and command != "app_sleep_toggle":
+                    continue
+
+                if command == "app_sleep_toggle":
+                    self.handle_app_sleep_toggle()
+                elif command == "w":
                     self.handle_up()
                 elif command == "s":
                     self.handle_down()

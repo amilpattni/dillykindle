@@ -69,3 +69,12 @@ sudo systemctl stop dillykindle.service
 sudo systemctl start dillykindle.service
 sudo systemctl disable dillykindle.service
 journalctl -u dillykindle.service -n 80 --no-pager
+
+
+## GP16 app sleep
+
+The Pico GP16 button is an app-level sleep toggle, not the real power-off control.
+
+- Hold GP16 for 1.2 seconds -> show DillyKindle sleep screen
+- Hold GP16 again for 1.2 seconds -> wake back into the app
+- PiSugar custom button long tap -> true safe shutdown

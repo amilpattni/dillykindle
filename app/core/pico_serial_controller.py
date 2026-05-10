@@ -15,6 +15,8 @@ COMMAND_MAP = {
     "POWER": "x",
     "ZOOM_IN": "zoom_in",
     "ZOOM_OUT": "zoom_out",
+    "APP_SLEEP_TOGGLE": "app_sleep_toggle",
+    "SHUTDOWN": "shutdown",
 }
 
 
