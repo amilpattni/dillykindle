@@ -11,6 +11,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from app.core.book_manager import get_books, get_book, add_book, remove_book
 from app.core import bookmark_manager, progress_manager
+from app.core.battery_manager import get_battery_text
 from app.core.pico_serial_controller import PicoSerialController
 from app.epaper.display import EPaperDisplay
 from app.core.wifi_manager import wifi_status
@@ -367,6 +368,12 @@ class EPaperApp:
 
         draw.text((42, 72), "dillykindle", font=title_font, fill=0)
         draw.text((42, 96), "for when diya wants to read", font=subtitle_font, fill=0)
+
+        battery_font = self.load_font(13)
+        battery_text = get_battery_text()
+        battery_box = draw.textbbox((0, 0), battery_text, font=battery_font)
+        battery_x = PORTRAIT_WIDTH - (battery_box[2] - battery_box[0]) - 42
+        draw.text((battery_x, 76), battery_text, font=battery_font, fill=0)
 
         y_positions = [250, 302, 354]
 

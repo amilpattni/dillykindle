@@ -78,3 +78,23 @@ The Pico GP16 button is an app-level sleep toggle, not the real power-off contro
 - Hold GP16 for 1.2 seconds -> show DillyKindle sleep screen
 - Hold GP16 again for 1.2 seconds -> wake back into the app
 - PiSugar custom button long tap -> true safe shutdown
+
+
+## Wi-Fi power policy
+
+Final-device Wi-Fi behavior:
+
+- Wi-Fi is off by default after boot when power-save service is installed.
+- If Wi-Fi is connected through the Add Books web page, it stays connected.
+- Entering Reader turns Wi-Fi off.
+- Shutdown turns Wi-Fi off.
+- DillyKindle does not automatically reconnect Wi-Fi after leaving Reader.
+
+To install Wi-Fi-off-at-boot behavior:
+
+./scripts/install_power_save.sh
+
+To temporarily turn Wi-Fi back on for SSH/debugging:
+
+sudo nmcli radio wifi on
+sudo nmcli device connect wlan0

@@ -42,3 +42,8 @@ from PIL import Image
 from waveshare_epd import epd7in5_V2
 print("Pi Lite setup good")
 PY
+
+
+# Optional final-device power saving:
+# To enable Wi-Fi-off-at-boot behavior, run:
+# ./scripts/install_power_save.sh
