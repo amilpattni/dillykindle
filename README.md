@@ -53,3 +53,19 @@ While reading:
 - Hold SELECT + DOWN -> zoom out
 
 Zoom is handled by the Pico sending serial commands `ZOOM_IN` and `ZOOM_OUT`.
+
+
+## Auto-start on boot
+
+To make DillyKindle start automatically when the Pi boots:
+
+./scripts/install_autostart.sh
+sudo reboot
+
+Useful commands:
+
+sudo systemctl status dillykindle.service
+sudo systemctl stop dillykindle.service
+sudo systemctl start dillykindle.service
+sudo systemctl disable dillykindle.service
+journalctl -u dillykindle.service -n 80 --no-pager

@@ -1,4 +1,5 @@
 import inspect
+import time
 import sys
 import select
 from pathlib import Path
@@ -1196,13 +1197,16 @@ class EPaperApp:
                 command = pico.read_command()
 
                 if command is None:
-                    try:
-                        ready, _, _ = select.select([sys.stdin], [], [], 0.05)
-                    except Exception:
-                        ready = []
+                    if sys.stdin is not None and sys.stdin.isatty():
+                        try:
+                            ready, _, _ = select.select([sys.stdin], [], [], 0.05)
+                        except Exception:
+                            ready = []
 
-                    if ready:
-                        command = sys.stdin.readline().strip().lower()
+                        if ready:
+                            command = sys.stdin.readline().strip().lower()
+                    else:
+                        time.sleep(0.05)
 
                 if not command:
                     continue
