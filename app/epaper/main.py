@@ -13,8 +13,8 @@ from app.core.book_manager import get_books, get_book, add_book, remove_book
 from app.core import bookmark_manager, progress_manager
 from app.core.battery_manager import get_battery_text
 from app.core.pico_serial_controller import PicoSerialController
+from app.core.wifi_manager import start_hotspot, stop_hotspot, hotspot_is_active, get_upload_url
 from app.epaper.display import EPaperDisplay
-from app.core.wifi_manager import wifi_status
 
 
 PORTRAIT_WIDTH = 480
@@ -355,6 +355,9 @@ class EPaperApp:
         return image
 
     def render_home(self):
+        if self.upload_server_process is not None or hotspot_is_active():
+            self.stop_upload_server()
+
         image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)
         draw = ImageDraw.Draw(image)
 
@@ -698,22 +701,19 @@ class EPaperApp:
 
 
     def get_local_ip(self):
-        result = subprocess.run(
-            ["hostname", "-I"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-
-        for ip in result.stdout.split():
-            if ip.startswith("192.") or ip.startswith("10.") or ip.startswith("172."):
-                return ip
-
-        return "localhost"
+        return get_upload_url().replace("http://", "").replace(":8080", "")
 
     def start_upload_server(self):
         if self.upload_server_process is not None:
             return
+
+        start_hotspot()
+
+        subprocess.run(
+            ["sudo", "fuser", "-k", "8080/tcp"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
         self.upload_server_process = subprocess.Popen(
             [
@@ -725,17 +725,18 @@ class EPaperApp:
         )
 
     def stop_upload_server(self):
-        if self.upload_server_process is None:
-            return
+        if self.upload_server_process is not None:
+            self.upload_server_process.terminate()
 
-        self.upload_server_process.terminate()
+            try:
+                self.upload_server_process.wait(timeout=3)
+            except Exception:
+                pass
 
-        try:
-            self.upload_server_process.wait(timeout=3)
-        except Exception:
-            pass
+            self.upload_server_process = None
 
-        self.upload_server_process = None
+        if hotspot_is_active():
+            stop_hotspot()
 
     def render_upload_books(self):
         image = Image.new("1", (PORTRAIT_WIDTH, PORTRAIT_HEIGHT), 255)

@@ -1,9 +1,10 @@
 from pathlib import Path
+from threading import Thread
 
 from flask import Flask, request, redirect, render_template_string
 
 from app.core.book_manager import add_book, get_books
-from app.core.wifi_manager import connect_temporary_wifi
+from app.core.wifi_manager import connect_temporary_wifi_after_delay
 
 UPLOAD_DIR = Path.home() / "dillykindle_uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -57,7 +58,10 @@ PAGE = """
     <summary>Button for Amil to fix any issues</summary>
     <div class="box">
       <h2>Connect device to Wi-Fi</h2>
-      <p class="note">This connects the Pi to the entered Wi-Fi using a temporary, non-autoconnecting profile.</p>
+      <p class="note">
+        This turns off the dillykindle hotspot and connects the Pi to the entered Wi-Fi.
+        The page will disconnect after you click Connect.
+      </p>
       <form method="post" action="/connect-wifi">
         <input type="text" name="ssid" placeholder="Wi-Fi SSID" required>
         <input type="password" name="password" placeholder="Wi-Fi password" required>
@@ -69,9 +73,27 @@ PAGE = """
 </html>
 """
 
+CONNECTING_PAGE = """
+<!doctype html>
+<html>
+<head>
+  <title>DillyKindle Connecting</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <h1>DillyKindle is connecting</h1>
+  <p>The hotspot will turn off now.</p>
+  <p>Reconnect your computer to the Wi-Fi network you entered.</p>
+  <p>Then SSH into the Pi using its new Wi-Fi IP.</p>
+</body>
+</html>
+"""
+
+
 @app.route("/", methods=["GET"])
 def index():
     return render_template_string(PAGE, books=get_books())
+
 
 @app.route("/upload", methods=["POST"])
 def upload():
@@ -91,6 +113,7 @@ def upload():
 
     return redirect("/")
 
+
 @app.route("/connect-wifi", methods=["POST"])
 def connect_wifi():
     ssid = request.form.get("ssid", "").strip()
@@ -99,12 +122,15 @@ def connect_wifi():
     if not ssid or not password:
         return "SSID and password are required", 400
 
-    result = connect_temporary_wifi(ssid, password)
+    worker = Thread(
+        target=connect_temporary_wifi_after_delay,
+        args=(ssid, password),
+        daemon=True,
+    )
+    worker.start()
 
-    if result.returncode != 0:
-        return f"Wi-Fi connect failed:<br><pre>{result.stderr}</pre>", 500
+    return CONNECTING_PAGE
 
-    return "Wi-Fi connected. You can now SSH into the Pi using its Wi-Fi IP."
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
