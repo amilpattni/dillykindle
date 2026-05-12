@@ -4,3 +4,4 @@
 # - GPIO / SPI
 #
 # Do not add pymupdf here.
+flask
