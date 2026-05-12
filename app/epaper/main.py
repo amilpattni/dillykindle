@@ -1225,7 +1225,7 @@ class EPaperApp:
                         if ready:
                             command = sys.stdin.readline().strip().lower()
                     else:
-                        time.sleep(0.05)
+                        time.sleep(0.02)
 
                 if not command:
                     continue

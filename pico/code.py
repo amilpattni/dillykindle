@@ -29,6 +29,7 @@ for name, pin in PIN_MAP.items():
 
 select_consumed = False
 POWER_HOLD_SECONDS = 1.2
+BUTTON_DEBOUNCE_SECONDS = 0.08
 
 
 def send_command(command):
@@ -65,7 +66,7 @@ while True:
         is_pressed = pressed[name]
         was_pressed = item["was_pressed"]
 
-        if is_pressed and not was_pressed and now - item["last_press_time"] > 0.18:
+        if is_pressed and not was_pressed and now - item["last_press_time"] > BUTTON_DEBOUNCE_SECONDS:
             if name == "UP":
                 if pressed["SELECT"]:
                     send_command("ZOOM_IN")
