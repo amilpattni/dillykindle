@@ -662,9 +662,11 @@ class EPaperApp:
             if not book_folder.exists() or not book_folder.is_dir():
                 continue
 
-            for file in sorted([p for p in book_folder.iterdir() if p.suffix.lower() in {".pdf", ".epub"}]):
+            for file in sorted(book_folder.glob("*.pdf")):
                 pdfs.append(file)
 
+            for file in sorted(book_folder.glob("*.PDF")):
+                pdfs.append(file)
 
         unique = []
         seen = set()
