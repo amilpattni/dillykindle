@@ -47,19 +47,15 @@ def get_usb_pdfs():
 
     for location in get_usb_locations():
         try:
-            for file in sorted(location.glob("*.pdf")):
+            for file in sorted([p for p in location.iterdir() if p.suffix.lower() in {".pdf", ".epub"}]):
                 files.append(file)
 
-            for file in sorted(location.glob("*.PDF")):
-                files.append(file)
 
             for folder in sorted(location.iterdir()):
                 if folder.is_dir():
-                    for file in sorted(folder.glob("*.pdf")):
+                    for file in sorted([p for p in folder.iterdir() if p.suffix.lower() in {".pdf", ".epub"}]):
                         files.append(file)
 
-                    for file in sorted(folder.glob("*.PDF")):
-                        files.append(file)
 
         except PermissionError:
             continue
@@ -361,9 +357,9 @@ class EditBooksScreen(ctk.CTkFrame):
 
     def import_from_directory(self, start_directory):
         file_path = filedialog.askopenfilename(
-            title="Import a PDF book",
+            title="Import a book",
             initialdir=str(start_directory),
-            filetypes=[("PDF Books", "*.pdf")]
+            filetypes=[("Book Files", "*.pdf *.epub"), ("PDF Books", "*.pdf"), ("EPUB Books", "*.epub")]
         )
 
         if not file_path:

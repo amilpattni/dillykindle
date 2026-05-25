@@ -34,10 +34,10 @@ PAGE = """
   <h1>DillyKindle Book Upload</h1>
 
   <div class="box">
-    <h2>Upload PDF</h2>
+    <h2>Upload Book</h2>
     <form method="post" action="/upload" enctype="multipart/form-data">
-      <input type="file" name="book" accept="application/pdf,.pdf" required>
-      <button type="submit">Upload PDF</button>
+      <input type="file" name="book" accept="application/pdf,.pdf,application/epub+zip,.epub" required>
+      <button type="submit">Upload Book</button>
     </form>
   </div>
 
@@ -104,8 +104,8 @@ def upload():
 
     filename = Path(file.filename).name
 
-    if not filename.lower().endswith(".pdf"):
-        return "Only PDF files are allowed", 400
+    if not filename.lower().endswith((".pdf", ".epub")):
+        return "Only PDF and EPUB files are allowed", 400
 
     destination = UPLOAD_DIR / filename
     file.save(destination)

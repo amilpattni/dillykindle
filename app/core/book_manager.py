@@ -109,8 +109,8 @@ def add_book(source_path):
     if not source.exists():
         raise FileNotFoundError("Selected file does not exist.")
 
-    if source.suffix.lower() != ".pdf":
-        raise ValueError("Only PDF files are supported right now.")
+    if source.suffix.lower() not in {".pdf", ".epub"}:
+        raise ValueError("Only PDF and EPUB files are supported right now.")
 
     destination = get_destination_for_import(source)
     existing_book = get_book_by_path(destination)
