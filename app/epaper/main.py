@@ -1153,10 +1153,15 @@ class EPaperApp:
         sleep_image = self.render_sleep_screen()
         self.display.full_refresh(sleep_image)
 
-        threading.Timer(2.0, self.shutdown_from_sleep_screen).start()
+        threading.Thread(
+            target=self.shutdown_from_sleep_screen,
+            daemon=True
+        ).start()
 
     def shutdown_from_sleep_screen(self):
         try:
+            time.sleep(4)
+            subprocess.run(["sync"], check=False)
             subprocess.Popen(["sudo", "-n", "/usr/bin/systemctl", "poweroff"])
         except Exception as exc:
             print(f"Shutdown from sleep screen failed: {exc}", flush=True)
