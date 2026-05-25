@@ -1,25 +1,39 @@
 # DillyKindle
 
-DillyKindle is a Raspberry Pi-based e-reader built to feel like a small, focused Kindle-style device. It runs a custom Python reading app on an e-paper display and supports local PDF reading, bookmarks, physical button navigation, and wireless book uploads through its own Wi-Fi hotspot.
+DillyKindle is a custom Raspberry Pi-based e-reader built with an e-paper display, physical button controls, local PDF storage, and wireless book uploading, made as a gift for a loved one.
 
-![DillyKindle device photo](assets/device-photo.jpg)
+![DillyKindle home screen](dillykindle-home.jpg)
+
+![DillyKindle reading screen](dillykindle-read.jpg)
 
 ## Overview
 
-DillyKindle is designed as a standalone reading device rather than a normal desktop app. When the Raspberry Pi boots, it launches directly into the reader interface. Books are stored locally, reading progress is saved automatically, and the device can create its own hotspot so new books can be uploaded from another device through a browser.
+DillyKindle is designed to work like a small standalone Kindle-style device. It boots directly into a custom reading interface, stores books locally, saves reading progress, and allows new books to be uploaded from another phone or computer without needing SSH or manual file transfer.
+
+## Project Highlights
+
+- Built a Raspberry Pi Zero 2 W-based e-reader using an e-paper display, physical button controls, local storage, and a lightweight Python reading interface.
+
+- Developed the software with Python, PyMuPDF for PDF rendering, JSON-based storage for books/bookmarks/progress, GPIO/Pico-based input handling, and systemd for automatic startup.
+
+- Added standalone device features including Wi-Fi hotspot book uploads, browser-based file transfer, rechargeable battery support, battery-level monitoring, and planned power/sleep management for portable use.
 
 ## Features
 
-- Custom Python e-reader interface
-- PDF rendering with PyMuPDF
+- PDF reading interface
 - E-paper display support
 - Physical button navigation
-- Bookmark and reading progress storage
-- Local book library management
-- Wi-Fi hotspot mode for wireless book uploads
-- Browser-based upload page for adding books
-- Automatic startup using systemd
-- Lightweight file-based storage using JSON
+- Local book library
+- Bookmark saving
+- Reading progress tracking
+- Continue-reading support
+- Browser-based book upload page
+- Built-in Wi-Fi hotspot for wireless uploads
+- Automatic launch on boot
+- Lightweight JSON-based storage
+- Rechargeable battery support
+- Battery-level monitoring
+- Planned low-power sleep/off behavior
 
 ## Hardware
 
@@ -28,36 +42,35 @@ The project uses:
 - Raspberry Pi Zero 2 W
 - E-paper display
 - Physical navigation buttons
-- Pico/GPIO-based button input system
-- MicroSD card for OS, app files, and book storage
-- Planned rechargeable battery/power-management setup
-- Planned custom enclosure
+- GPIO/Pico-based button input system
+- MicroSD card for the operating system, app files, and book storage
+- Rechargeable battery/power-management hardware
+- Custom enclosure planned
 
 ## Software Stack
 
 The main software components are:
 
-- Python for the main application
+- Python
 - PyMuPDF for rendering PDF pages
-- JSON files for storing library data, bookmarks, and progress
-- Local HTTP server for browser-based book uploads
-- Raspberry Pi hotspot configuration for direct wireless access
-- systemd service for launching the app automatically on boot
+- JSON for storing book data, bookmarks, and reading progress
+- Local HTTP server for browser-based uploads
+- Raspberry Pi Wi-Fi hotspot configuration
+- GPIO/Pico input handling for physical buttons
+- systemd for automatic startup on boot
 
 ## How It Works
 
-On startup, the Raspberry Pi launches the DillyKindle application automatically. The home screen lets the user open books, continue reading, manage the library, and access saved bookmarks.
+When the device turns on, the Raspberry Pi automatically launches the DillyKindle reading app.
 
-Books can be added wirelessly by connecting another device to the DillyKindle hotspot and opening the local upload page in a browser. Uploaded files are saved directly to the device library and become available in the reader interface.
+Books are stored locally on the device. The reader keeps track of progress and bookmarks so the user can return to where they left off.
 
-Inside the reader, physical buttons are used to move between pages, open books, save bookmarks, and return to the home screen.
+To add books, another device can connect to the DillyKindle Wi-Fi hotspot and open the local upload page in a browser. Uploaded books are saved directly to the local library.
 
-## Project Goals
+Physical buttons are used for reading controls such as page navigation, selecting books, saving bookmarks, and returning to the home screen.
 
-The goal of DillyKindle is to build a simple, dedicated e-reader from scratch using accessible hardware and custom software. The project focuses on making a device that is portable, readable, offline-first, and easy to load books onto without depending on a normal computer workflow.
+## Current Status
 
-Future improvements include rechargeable battery integration, battery percentage display in software, a lighter operating system setup, improved power/sleep behavior, and a finished physical case.
+The main software system is functional, including PDF reading, local storage, bookmarks, reading progress, physical controls, automatic startup, and hotspot-based book uploads.
 
-## Status
-
-The core software is functional. PDF reading, bookmarks, local storage, physical navigation, automatic startup, and hotspot-based book uploads are working or in active integration. The remaining work is mostly hardware refinement, power management, and enclosure design.
+The remaining work is focused on hardware refinement, rechargeable power integration, battery display improvements, sleep/off behavior, and the final physical case.
