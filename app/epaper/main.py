@@ -1,5 +1,6 @@
 import inspect
 import time
+import threading
 import sys
 import select
 from pathlib import Path
@@ -1146,13 +1147,19 @@ class EPaperApp:
 
     def handle_app_sleep_toggle(self):
         if self.app_sleeping:
-            self.app_sleeping = False
-            self.show_current("full")
             return
 
         self.app_sleeping = True
         sleep_image = self.render_sleep_screen()
         self.display.full_refresh(sleep_image)
+
+        threading.Timer(2.0, self.shutdown_from_sleep_screen).start()
+
+    def shutdown_from_sleep_screen(self):
+        try:
+            subprocess.Popen(["sudo", "-n", "/usr/bin/systemctl", "poweroff"])
+        except Exception as exc:
+            print(f"Shutdown from sleep screen failed: {exc}", flush=True)
 
     def handle_back(self):
         if self.screen == "home":
