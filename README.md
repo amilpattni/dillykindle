@@ -73,4 +73,4 @@ Physical buttons are used for reading controls such as page navigation, selectin
 
 The main software system is functional, including PDF reading, local storage, bookmarks, reading progress, physical controls, automatic startup, and hotspot-based book uploads.
 
-The remaining work is focused on hardware refinement, rechargeable power integration, battery display improvements, sleep/off behavior, and the final physical case.
+The remaining work is focused on hardware refinement, sleep/off behavior, and the final physical case.
