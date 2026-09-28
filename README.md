@@ -1,6 +1,6 @@
 # DillyKindle
 
-DillyKindle is a small Raspberry Pi e-reader I built as a gift for a loved one. It displays locally stored PDFs on an e-paper screen and uses physical buttons for reading and navigating the library.
+DillyKindle is a small Raspberry Pi e-reader I built as a gift. It displays locally stored PDFs on an e-paper screen and uses physical buttons for reading and navigating the library.
 
 ![DillyKindle home screen](image.jpg)
 
